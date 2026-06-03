@@ -2,9 +2,7 @@
 
 import Link from "next/link";
 import { motion } from "framer-motion";
-import { Images, Calendar, User } from "lucide-react";
-import Avatar from "@/components/ui/avatar";
-import { formatRelativeTime } from "@/lib/utils";
+import { Images } from "lucide-react";
 
 interface RecordCardProps {
   id: string;
@@ -14,17 +12,29 @@ interface RecordCardProps {
   creatorName: string;
   creatorAvatar?: string | null;
   createdAt: string;
+  countryOfOrigin?: string | null;
+  brewType?: string | null;
   index?: number;
 }
+
+const COUNTRY_FLAGS: Record<string, string> = {
+  "البرازيل": "🇧🇷",
+  "إثيوبيا": "🇪🇹",
+  "سلفادور": "🇸🇻",
+  "أوغندا": "🇺🇬",
+  "كوستاريكا": "🇨🇷",
+  "إندونيسيا": "🇮🇩",
+  "كولمبيا": "🇨🇴",
+  "بيرو": "🇵🇪",
+  "اليمن": "🇾🇪",
+};
 
 export default function RecordCard({
   id,
   name,
   coverImageUrl,
-  imageCount,
-  creatorName,
-  creatorAvatar,
-  createdAt,
+  countryOfOrigin,
+  brewType,
   index = 0,
 }: RecordCardProps) {
   return (
@@ -35,34 +45,37 @@ export default function RecordCard({
     >
       <Link href={`/records/${id}`} className="block group">
         <div className="card overflow-hidden">
-          {/* Cover Image */}
-          <div className="relative w-full h-48 overflow-hidden bg-[var(--bg-tertiary)]">
+          {/* Cover Image — full visible, no crop */}
+          <div className="relative w-full aspect-[3/4] overflow-hidden bg-[var(--bg-tertiary)] flex items-center justify-center">
             {coverImageUrl ? (
               <img
                 src={coverImageUrl}
                 alt={name}
-                className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+                className="max-w-full max-h-full object-contain transition-transform duration-500 group-hover:scale-105"
                 loading="lazy"
               />
             ) : (
-              <div className="w-full h-full flex items-center justify-center">
-                <Images className="w-12 h-12 text-[var(--text-tertiary)]" />
-              </div>
+              <Images className="w-12 h-12 text-[var(--text-tertiary)]" />
             )}
-            {/* Image Count Badge */}
-            <div className="absolute top-3 end-3 glass rounded-lg px-2.5 py-1 flex items-center gap-1.5">
-              <Images className="w-3.5 h-3.5 text-[var(--text-secondary)]" />
-              <span className="text-xs font-semibold text-[var(--text-primary)]">
-                {imageCount}
-              </span>
-            </div>
           </div>
 
-          {/* Content */}
-          <div className="p-4">
-            <h3 className="text-sm font-semibold text-[var(--text-primary)] line-clamp-2 leading-relaxed group-hover:text-brand-500 transition-colors">
+          {/* Name + details */}
+          <div className="px-3 py-3 space-y-2">
+            <h3 className="text-sm font-semibold text-[var(--text-primary)] text-center line-clamp-1 group-hover:text-brand-500 transition-colors">
               {name}
             </h3>
+
+            {/* Country on one side, brew type on the other */}
+            {(countryOfOrigin || brewType) && (
+              <div className="flex items-center justify-between text-sm text-[var(--text-tertiary)]">
+                <span>
+                  {countryOfOrigin
+                    ? `${COUNTRY_FLAGS[countryOfOrigin] || "🌍"} ${countryOfOrigin}`
+                    : ""}
+                </span>
+                <span>{brewType || ""}</span>
+              </div>
+            )}
           </div>
         </div>
       </Link>

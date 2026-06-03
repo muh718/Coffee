@@ -20,6 +20,8 @@ export interface DocRecord {
   created_by: string;
   created_at: string;
   updated_at: string;
+  country_of_origin: string | null;
+  brew_type: string | null;
   // Joined fields
   creator?: User;
   image_count?: number;

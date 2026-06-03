@@ -7,6 +7,7 @@ export async function GET(request: NextRequest) {
     const query = searchParams.get("q") || "";
     const limit = parseInt(searchParams.get("limit") || "20");
     const offset = parseInt(searchParams.get("offset") || "0");
+    const sort = searchParams.get("sort") || "name";
 
     const supabase = await createClient();
 
@@ -19,16 +20,30 @@ export async function GET(request: NextRequest) {
     }
 
     if (!query.trim()) {
-      // No search query — return recent records
-      const { data, error } = await supabase
+      // No search query — apply sorting
+      let queryBuilder = supabase
         .from("records")
         .select(`
           *,
           creator:users!created_by(id, name, avatar_url),
           images(count)
-        `)
-        .order("created_at", { ascending: false })
-        .range(offset, offset + limit - 1);
+        `);
+
+      if (sort === "name") {
+        queryBuilder = queryBuilder.order("name", { ascending: true });
+      } else if (sort === "country") {
+        queryBuilder = queryBuilder
+          .order("country_of_origin", { ascending: true, nullsFirst: false })
+          .order("name", { ascending: true });
+      } else if (sort === "type") {
+        queryBuilder = queryBuilder
+          .order("brew_type", { ascending: true, nullsFirst: false })
+          .order("name", { ascending: true });
+      } else {
+        queryBuilder = queryBuilder.order("created_at", { ascending: false });
+      }
+
+      const { data, error } = await queryBuilder.range(offset, offset + limit - 1);
 
       if (error) throw error;
 

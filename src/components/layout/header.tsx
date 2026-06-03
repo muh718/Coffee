@@ -2,6 +2,7 @@
 
 import { useState, useRef, useEffect } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import { usePathname, useRouter } from "next/navigation";
 import { LogOut, ChevronDown, Menu, Sparkles, LayoutDashboard, Shield, BarChart3 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
@@ -46,7 +47,7 @@ export default function Header() {
   const navItems = [
     {
       href: "/dashboard",
-      label: "لوحة التحكم",
+      label: "الصفحة الرئيسية",
       icon: LayoutDashboard,
     },
     {
@@ -113,8 +114,8 @@ export default function Header() {
         </div>
 
         <Link href="/dashboard" className="flex items-center gap-3">
-          <div className="w-8 h-8 rounded-lg gradient-brand flex items-center justify-center flex-shrink-0 shadow-sm">
-            <Sparkles className="w-4 h-4 text-white" />
+          <div className="w-8 h-8 rounded-lg overflow-hidden flex items-center justify-center flex-shrink-0 shadow-sm relative">
+            <Image src="/logo.jpg" alt="Logo" fill className="object-cover" />
           </div>
           <h1 className="text-base font-bold gradient-brand-text hidden sm:block">
             {APP_NAME}

@@ -1,8 +1,8 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useParams, useRouter } from "next/navigation";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import {
   ArrowRight,
   Plus,
@@ -10,9 +10,9 @@ import {
   Pencil,
   Check,
   X,
-  Download,
   Calendar,
-  User,
+  ChevronLeft,
+  ChevronRight,
   Images as ImagesIcon,
 } from "lucide-react";
 import { toast } from "sonner";
@@ -26,6 +26,18 @@ import UploadModal from "@/components/upload/upload-modal";
 import { createClient } from "@/lib/supabase/client";
 import { useAuthStore } from "@/stores/auth-store";
 import { formatDate } from "@/lib/utils";
+
+const COUNTRY_FLAGS: Record<string, string> = {
+  "البرازيل": "🇧🇷",
+  "إثيوبيا": "🇪🇹",
+  "سلفادور": "🇸🇻",
+  "أوغندا": "🇺🇬",
+  "كوستاريكا": "🇨🇷",
+  "إندونيسيا": "🇮🇩",
+  "كولمبيا": "🇨🇴",
+  "بيرو": "🇵🇪",
+  "اليمن": "🇾🇪",
+};
 
 export default function RecordDetailPage() {
   const params = useParams();
@@ -43,7 +55,9 @@ export default function RecordDetailPage() {
   const [isEditing, setIsEditing] = useState(false);
   const [editName, setEditName] = useState("");
   const [lightboxIndex, setLightboxIndex] = useState(-1);
+  const [slideIndex, setSlideIndex] = useState(0);
 
+  /* ── Data fetching ── */
   const fetchRecord = async () => {
     const supabase = createClient();
 
@@ -61,7 +75,7 @@ export default function RecordDetailPage() {
     ]);
 
     if (recordRes.error) {
-      toast.error("لم يتم العثور على السجل");
+      toast.error("لم يتم العثور على المحصول");
       router.push("/dashboard");
       return;
     }
@@ -76,6 +90,7 @@ export default function RecordDetailPage() {
     fetchRecord();
   }, [recordId]);
 
+  /* ── Actions ── */
   const handleRename = async () => {
     if (!editName.trim()) return;
     const supabase = createClient();
@@ -99,7 +114,7 @@ export default function RecordDetailPage() {
 
     setRecord({ ...record, name: editName.trim() });
     setIsEditing(false);
-    toast.success("تم تحديث اسم السجل");
+    toast.success("تم تحديث اسم المحصول");
   };
 
   const handleDeleteRecord = async () => {
@@ -111,7 +126,7 @@ export default function RecordDetailPage() {
       .eq("id", recordId);
 
     if (error) {
-      toast.error("فشل حذف السجل");
+      toast.error("فشل حذف المحصول");
       return;
     }
 
@@ -122,7 +137,7 @@ export default function RecordDetailPage() {
       details: { name: record.name },
     });
 
-    toast.success("تم حذف السجل");
+    toast.success("تم حذف المحصول");
     router.push("/dashboard");
   };
 
@@ -150,132 +165,210 @@ export default function RecordDetailPage() {
     toast.success("تم حذف الصورة");
   };
 
+  /* ── Slider helpers ── */
+  const heroImage = images.length > 1 ? images[1] : images[0];
+  const slideImages = images.length > 1 ? images.slice(1) : images;
+
+  const goNextSlide = useCallback(() => {
+    if (slideImages.length <= 1) return;
+    setSlideIndex((prev) => (prev + 1) % slideImages.length);
+  }, [slideImages.length]);
+
+  const goPrevSlide = useCallback(() => {
+    if (slideImages.length <= 1) return;
+    setSlideIndex((prev) => (prev - 1 + slideImages.length) % slideImages.length);
+  }, [slideImages.length]);
+
   if (isLoading) return <DetailSkeleton />;
   if (!record) return null;
 
+  const countryFlag = record.country_of_origin
+    ? COUNTRY_FLAGS[record.country_of_origin] || "🌍"
+    : null;
+
   return (
-    <div className="space-y-6 animate-fade-in">
+    <div className="max-w-3xl mx-auto space-y-5 animate-fade-in px-4 sm:px-0">
       {/* Back Button */}
       <button
         onClick={() => router.push("/dashboard")}
         className="flex items-center gap-2 text-sm text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-colors"
       >
         <ArrowRight className="w-4 h-4 rtl:rotate-0 ltr:rotate-180" />
-        العودة للوحة التحكم
+        العودة للصفحة الرئيسية
       </button>
 
-      {/* Record Header */}
-      <div className="card-static p-6">
-        <div className="flex flex-col md:flex-row gap-6">
-          {/* Cover Image */}
-          <div className="w-full md:w-72 h-52 rounded-xl overflow-hidden bg-[var(--bg-tertiary)] flex-shrink-0">
-            {record.cover_image_url ? (
-              <img
-                src={record.cover_image_url}
-                alt={record.name}
-                className="w-full h-full object-cover cursor-pointer hover:scale-105 transition-transform duration-500"
-                onClick={() => setLightboxIndex(0)}
-              />
+      {/* ═══════════ Main Card ═══════════ */}
+      <div className="card-static overflow-hidden">
+        {/* ── 1. Crop Name ── */}
+        <div className="p-4 sm:p-6 pb-0">
+          <div className="flex items-start gap-3">
+            {isEditing ? (
+              <div className="flex-1 flex items-center gap-2">
+                <input
+                  type="text"
+                  value={editName}
+                  onChange={(e) => setEditName(e.target.value)}
+                  className="flex-1 text-lg sm:text-xl font-bold bg-transparent border-b-2 border-brand-500 outline-none text-[var(--text-primary)] pb-1"
+                  autoFocus
+                />
+                <button
+                  onClick={handleRename}
+                  className="p-1.5 rounded-lg text-emerald-500 hover:bg-emerald-500/10 transition-colors"
+                >
+                  <Check className="w-5 h-5" />
+                </button>
+                <button
+                  onClick={() => {
+                    setIsEditing(false);
+                    setEditName(record.name);
+                  }}
+                  className="p-1.5 rounded-lg text-[var(--text-tertiary)] hover:bg-[var(--bg-tertiary)] transition-colors"
+                >
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
             ) : (
-              <div className="w-full h-full flex items-center justify-center">
-                <ImagesIcon className="w-12 h-12 text-[var(--text-tertiary)]" />
+              <h1 className="flex-1 text-lg sm:text-xl font-bold text-[var(--text-primary)] leading-relaxed">
+                {record.name}
+              </h1>
+            )}
+            {isAdmin && !isEditing && (
+              <button
+                onClick={() => setIsEditing(true)}
+                className="p-2 rounded-lg text-[var(--text-tertiary)] hover:text-brand-500 hover:bg-brand-500/10 transition-colors flex-shrink-0"
+                title="تعديل الاسم"
+              >
+                <Pencil className="w-4 h-4" />
+              </button>
+            )}
+          </div>
+        </div>
+
+        {/* ── 2. Image Slider ── */}
+        {slideImages.length > 0 && (
+          <div className="relative w-full mt-4 bg-[var(--bg-tertiary)]">
+            {/* Slide container */}
+            <div className="relative w-full flex items-center justify-center" style={{ minHeight: "280px", maxHeight: "65vh" }}>
+              <AnimatePresence mode="wait">
+                <motion.img
+                  key={slideImages[slideIndex]?.id}
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  exit={{ opacity: 0 }}
+                  transition={{ duration: 0.3 }}
+                  src={slideImages[slideIndex]?.image_url}
+                  alt=""
+                  className="max-w-full max-h-[65vh] object-contain cursor-pointer select-none"
+                  onClick={() => {
+                    const realIdx = images.findIndex((img) => img.id === slideImages[slideIndex]?.id);
+                    setLightboxIndex(realIdx >= 0 ? realIdx : 0);
+                  }}
+                  draggable={false}
+                />
+              </AnimatePresence>
+
+              {/* Nav arrows */}
+              {slideImages.length > 1 && (
+                <>
+                  <button
+                    onClick={goPrevSlide}
+                    className="absolute start-2 sm:start-4 top-1/2 -translate-y-1/2 p-2 sm:p-3 rounded-full bg-black/30 text-white hover:bg-black/50 transition-colors z-10"
+                  >
+                    <ChevronRight className="w-5 h-5 rtl:rotate-0 ltr:rotate-180" />
+                  </button>
+                  <button
+                    onClick={goNextSlide}
+                    className="absolute end-2 sm:end-4 top-1/2 -translate-y-1/2 p-2 sm:p-3 rounded-full bg-black/30 text-white hover:bg-black/50 transition-colors z-10"
+                  >
+                    <ChevronLeft className="w-5 h-5 rtl:rotate-0 ltr:rotate-180" />
+                  </button>
+                </>
+              )}
+            </div>
+
+            {/* Dots */}
+            {slideImages.length > 1 && (
+              <div className="flex items-center justify-center gap-1.5 py-3">
+                {slideImages.map((_, i) => (
+                  <button
+                    key={i}
+                    onClick={() => setSlideIndex(i)}
+                    className={`w-2 h-2 rounded-full transition-all duration-300 ${
+                      i === slideIndex
+                        ? "bg-brand-500 w-5"
+                        : "bg-[var(--text-tertiary)]/40 hover:bg-[var(--text-tertiary)]"
+                    }`}
+                  />
+                ))}
               </div>
             )}
           </div>
+        )}
 
-          {/* Metadata */}
-          <div className="flex-1 space-y-4">
-            {/* Title */}
-            <div className="flex items-start gap-3">
-              {isEditing ? (
-                <div className="flex-1 flex items-center gap-2">
-                  <input
-                    type="text"
-                    value={editName}
-                    onChange={(e) => setEditName(e.target.value)}
-                    className="flex-1 text-xl font-bold bg-transparent border-b-2 border-brand-500 outline-none text-[var(--text-primary)] pb-1"
-                    autoFocus
-                  />
-                  <button
-                    onClick={handleRename}
-                    className="p-1.5 rounded-lg text-emerald-500 hover:bg-emerald-500/10 transition-colors"
-                  >
-                    <Check className="w-5 h-5" />
-                  </button>
-                  <button
-                    onClick={() => {
-                      setIsEditing(false);
-                      setEditName(record.name);
-                    }}
-                    className="p-1.5 rounded-lg text-[var(--text-tertiary)] hover:bg-[var(--bg-tertiary)] transition-colors"
-                  >
-                    <X className="w-5 h-5" />
-                  </button>
-                </div>
-              ) : (
-                <div className="flex-1">
-                  <h1 className="text-xl font-bold text-[var(--text-primary)] leading-relaxed">
-                    {record.name}
-                  </h1>
+        {/* ── 3. Details below image ── */}
+        <div className="p-4 sm:p-6 space-y-4">
+          {/* Country + Brew type */}
+          {(record.country_of_origin || record.brew_type) && (
+            <div className="flex items-center flex-wrap gap-2">
+              {record.country_of_origin && (
+                <div className="flex items-center gap-1.5 text-sm text-[var(--text-secondary)] bg-[var(--bg-tertiary)] px-3 py-1.5 rounded-lg">
+                  <span>{countryFlag}</span>
+                  <span>{record.country_of_origin}</span>
                 </div>
               )}
-              {isAdmin && !isEditing && (
+              {record.brew_type && (
+                <div className="text-sm text-[var(--text-secondary)] bg-[var(--bg-tertiary)] px-3 py-1.5 rounded-lg">
+                  {record.brew_type}
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* Add image button */}
+          <Button
+            variant="primary"
+            size="sm"
+            icon={<Plus className="w-4 h-4" />}
+            onClick={() => setShowUpload(true)}
+          >
+            إضافة صورة
+          </Button>
+
+          {/* ── Last row: creator + date on the right, delete icon on the left ── */}
+          <div className="flex items-center justify-between pt-3 border-t border-[var(--border-primary)]">
+            {/* Delete icon — bottom-left (start in RTL) */}
+            <div>
+              {isAdmin && (
                 <button
-                  onClick={() => setIsEditing(true)}
-                  className="p-2 rounded-lg text-[var(--text-tertiary)] hover:text-brand-500 hover:bg-brand-500/10 transition-colors"
-                  title="تعديل الاسم"
+                  onClick={() => setShowDeleteConfirm(true)}
+                  className="p-2 rounded-lg text-red-500 hover:bg-red-500/10 transition-colors"
+                  title="حذف المحصول"
                 >
-                  <Pencil className="w-4 h-4" />
+                  <Trash2 className="w-5 h-5" />
                 </button>
               )}
             </div>
 
-            {/* Info */}
-            <div className="flex flex-wrap items-center gap-4 text-sm text-[var(--text-secondary)]">
+            {/* Creator + Date — bottom-right (end in RTL) */}
+            <div className="flex items-center gap-4 text-sm text-[var(--text-secondary)]">
               <div className="flex items-center gap-2">
                 <Avatar
                   name={record.creator?.name || ""}
                   src={record.creator?.avatar_url}
-                  size="sm"
+                  size="xs"
                 />
-                <span>{record.creator?.name || "غير معروف"}</span>
+                <span className="hidden sm:inline">{record.creator?.name || "غير معروف"}</span>
               </div>
               <div className="flex items-center gap-1.5">
                 <Calendar className="w-4 h-4 text-[var(--text-tertiary)]" />
                 <span>{formatDate(record.created_at)}</span>
               </div>
-              <Badge variant="brand">
-                <ImagesIcon className="w-3 h-3 me-1" />
-                {images.length} صورة
-              </Badge>
-            </div>
-
-            {/* Actions */}
-            <div className="flex flex-wrap gap-2 pt-2">
-              <Button
-                variant="primary"
-                size="sm"
-                icon={<Plus className="w-4 h-4" />}
-                onClick={() => setShowUpload(true)}
-              >
-                إضافة صورة
-              </Button>
-              {isAdmin && (
-                <Button
-                  variant="danger"
-                  size="sm"
-                  icon={<Trash2 className="w-4 h-4" />}
-                  onClick={() => setShowDeleteConfirm(true)}
-                >
-                  حذف السجل
-                </Button>
-              )}
             </div>
           </div>
         </div>
       </div>
 
-      {/* Image Gallery */}
+      {/* ═══════════ Image Gallery ═══════════ */}
       <div>
         <h2 className="text-lg font-semibold text-[var(--text-primary)] mb-4">
           معرض الصور
@@ -284,11 +377,11 @@ export default function RecordDetailPage() {
           <div className="text-center py-12 card-static">
             <ImagesIcon className="w-12 h-12 mx-auto text-[var(--text-tertiary)] mb-3" />
             <p className="text-sm text-[var(--text-tertiary)]">
-              لا توجد صور في هذا السجل
+              لا توجد صور في هذا المحصول
             </p>
           </div>
         ) : (
-          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3">
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
             {images.map((image, index) => (
               <motion.div
                 key={image.id}
@@ -301,7 +394,7 @@ export default function RecordDetailPage() {
                 <img
                   src={image.image_url}
                   alt=""
-                  className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
+                  className="w-full h-full object-contain transition-transform duration-500 group-hover:scale-110"
                   loading="lazy"
                 />
                 {/* Hover overlay */}
@@ -347,12 +440,12 @@ export default function RecordDetailPage() {
       <Modal
         isOpen={showDeleteConfirm}
         onClose={() => setShowDeleteConfirm(false)}
-        title="تأكيد حذف السجل"
+        title="تأكيد حذف المحصول"
         size="sm"
       >
         <div className="space-y-4">
           <p className="text-sm text-[var(--text-secondary)]">
-            هل أنت متأكد من حذف السجل &ldquo;{record.name}&rdquo;؟ سيتم حذف جميع الصور
+            هل أنت متأكد من حذف المحصول &ldquo;{record.name}&rdquo;؟ سيتم حذف جميع الصور
             المرتبطة نهائياً.
           </p>
           <div className="flex gap-3 justify-end">

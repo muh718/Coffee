@@ -23,6 +23,7 @@ export default function DashboardPage() {
   const [records, setRecords] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
+  const [sortBy, setSortBy] = useState("name");
   const [showUpload, setShowUpload] = useState(false);
   const [hasMore, setHasMore] = useState(true);
   const [page, setPage] = useState(0);
@@ -35,7 +36,7 @@ export default function DashboardPage() {
 
       try {
         const res = await fetch(
-          `/api/search?q=${encodeURIComponent(searchQuery)}&limit=${RECORDS_PER_PAGE}&offset=${offset}`
+          `/api/search?q=${encodeURIComponent(searchQuery)}&limit=${RECORDS_PER_PAGE}&offset=${offset}&sort=${sortBy}`
         );
         const data = await res.json();
         const newRecords = data.records || [];
@@ -63,7 +64,7 @@ export default function DashboardPage() {
     setIsLoading(true);
     setPage(0);
     fetchRecords(true);
-  }, [searchQuery]);
+  }, [searchQuery, sortBy]);
 
   // Infinite scroll
   useEffect(() => {
@@ -100,12 +101,21 @@ export default function DashboardPage() {
           placeholder="ابحث بالعنوان أو بأي نص داخل الصور..."
           className="flex-1"
         />
+        <select
+          value={sortBy}
+          onChange={(e) => setSortBy(e.target.value)}
+          className="bg-white/5 border border-[var(--border-primary)] rounded-xl px-4 py-2 text-sm text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-brand-500/50 appearance-none"
+        >
+          <option value="name">الاسم</option>
+          <option value="country">البلد ثم الاسم</option>
+          <option value="type">النوع</option>
+        </select>
         <Button
           variant="primary"
           icon={<Plus className="w-4 h-4" />}
           onClick={() => setShowUpload(true)}
         >
-          سجل جديد
+          إضافة محصول
         </Button>
       </div>
 
@@ -130,12 +140,12 @@ export default function DashboardPage() {
             )}
           </div>
           <h3 className="text-lg font-semibold text-[var(--text-primary)] mb-2">
-            {searchQuery ? "لا توجد نتائج" : "لا توجد سجلات بعد"}
+            {searchQuery ? "لا توجد نتائج" : "لا توجد محاصيل بعد"}
           </h3>
           <p className="text-sm text-[var(--text-tertiary)] mb-6">
             {searchQuery
               ? "جرب كلمات بحث مختلفة"
-              : "ابدأ بإنشاء أول سجل عبر رفع صورة وثيقة"}
+              : "ابدأ بإضافة أول محصول عبر رفع صورة"}
           </p>
           {!searchQuery && (
             <Button
@@ -143,7 +153,7 @@ export default function DashboardPage() {
               icon={<Plus className="w-4 h-4" />}
               onClick={() => setShowUpload(true)}
             >
-              إنشاء أول سجل
+              إضافة أول محصول
             </Button>
           )}
         </motion.div>
@@ -160,6 +170,8 @@ export default function DashboardPage() {
                 creatorName={record.creator?.name || record.creator_name || "غير معروف"}
                 creatorAvatar={record.creator?.avatar_url}
                 createdAt={record.created_at}
+                countryOfOrigin={record.country_of_origin}
+                brewType={record.brew_type}
                 index={i}
               />
             ))}

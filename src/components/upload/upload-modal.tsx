@@ -40,6 +40,28 @@ export default function UploadModal({
   const [suggestedTitle, setSuggestedTitle] = useState("");
   const [editedTitle, setEditedTitle] = useState("");
   const [rawText, setRawText] = useState("");
+  const [country, setCountry] = useState<string>("");
+  const [brewType, setBrewType] = useState<string>("");
+  const [uploadedUrl, setUploadedUrl] = useState<string>("");
+
+  const COUNTRIES = [
+    { value: "البرازيل", label: "البرازيل", flag: "🇧🇷" },
+    { value: "إثيوبيا", label: "إثيوبيا", flag: "🇪🇹" },
+    { value: "سلفادور", label: "سلفادور", flag: "🇸🇻" },
+    { value: "أوغندا", label: "أوغندا", flag: "🇺🇬" },
+    { value: "كوستاريكا", label: "كوستاريكا", flag: "🇨🇷" },
+    { value: "إندونيسيا", label: "إندونيسيا", flag: "🇮🇩" },
+    { value: "كولمبيا", label: "كولمبيا", flag: "🇨🇴" },
+    { value: "بيرو", label: "بيرو", flag: "🇵🇪" },
+    { value: "اليمن", label: "اليمن", flag: "🇾🇪" },
+  ];
+
+  const BREW_TYPES = [
+    { value: "فلتر", label: "فلتر" },
+    { value: "اسبريسو", label: "اسبريسو" },
+    { value: "فلتر & اسبريسو", label: "فلتر & اسبريسو" },
+  ];
+
   const [isProcessing, setIsProcessing] = useState(false);
   const [isDragging, setIsDragging] = useState(false);
   const [similarRecords, setSimilarRecords] = useState<any[]>([]);
@@ -55,6 +77,9 @@ export default function UploadModal({
     setSuggestedTitle("");
     setEditedTitle("");
     setRawText("");
+    setCountry("");
+    setBrewType("");
+    setUploadedUrl("");
     setIsProcessing(false);
     setSimilarRecords([]);
     setShowDuplicateDialog(false);
@@ -105,6 +130,7 @@ export default function UploadModal({
         data: { publicUrl },
       } = supabase.storage.from(STORAGE_BUCKET).getPublicUrl(fileName);
 
+      setUploadedUrl(publicUrl);
       setIsProcessing(false);
 
       if (isFirstImage) {
@@ -153,19 +179,15 @@ export default function UploadModal({
     const supabase = createClient();
 
     try {
-      // Get image URL from preview's storage path
-      const fileName = generateStorageFileName(user!.id, file!.name);
-      const {
-        data: { publicUrl },
-      } = supabase.storage.from(STORAGE_BUCKET).getPublicUrl(fileName);
-
       // Create the record
       const { data: record, error: recordError } = await supabase
         .from("records")
         .insert({
           name: editedTitle,
-          cover_image_url: publicUrl,
+          cover_image_url: uploadedUrl,
           created_by: user!.id,
+          country_of_origin: country || null,
+          brew_type: brewType || null,
         })
         .select()
         .single();
@@ -175,7 +197,7 @@ export default function UploadModal({
       // Save the first image with OCR data
       const { error: imageError } = await supabase.from("images").insert({
         record_id: record.id,
-        image_url: publicUrl,
+        image_url: uploadedUrl,
         raw_ocr_text: rawText,
         uploaded_by: user!.id,
       });
@@ -190,7 +212,7 @@ export default function UploadModal({
         details: { title: editedTitle },
       });
 
-      toast.success("تم إنشاء السجل بنجاح! 🎉");
+      toast.success("تم إضافة المحصول بنجاح! 🎉");
       handleClose();
       onSuccess(record.id);
     } catch (error) {
@@ -232,12 +254,7 @@ export default function UploadModal({
 
   const addToExistingRecord = async (existingRecordId: string) => {
     setShowDuplicateDialog(false);
-    const supabase = createClient();
-    const fileName = generateStorageFileName(user!.id, file!.name);
-    const {
-      data: { publicUrl },
-    } = supabase.storage.from(STORAGE_BUCKET).getPublicUrl(fileName);
-    await saveImage.call(null, publicUrl);
+    await saveImage(uploadedUrl);
     onSuccess(existingRecordId);
   };
 
@@ -270,12 +287,12 @@ export default function UploadModal({
         isOpen={isOpen}
         onClose={handleClose}
         title={
-          isFirstImage ? "إنشاء سجل جديد" : "إضافة صورة"
+          isFirstImage ? "إضافة محصول" : "إضافة صورة"
         }
         description={
           isFirstImage
-            ? "ارفع صورة الوثيقة الأولى لإنشاء سجل جديد بعنوان ذكي"
-            : "أضف صورة جديدة لهذا السجل"
+            ? "ارفع صورة الوثيقة الأولى لإضافة محصول جديد باسم ذكي"
+            : "أضف صورة جديدة لهذا المحصول"
         }
         size="lg"
       >
@@ -379,12 +396,48 @@ export default function UploadModal({
                 )}
                 <div className="flex-1 space-y-4">
                   <Input
-                    label="عنوان السجل"
+                    label="اسم المحصول"
                     value={editedTitle}
                     onChange={(e) => setEditedTitle(e.target.value)}
-                    placeholder="أدخل عنوان السجل"
+                    placeholder="أدخل اسم المحصول"
                     hint="هذا الحقل إلزامي"
                   />
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-1.5">
+                      <label className="block text-sm font-medium text-[var(--text-primary)]">
+                        بلد المنشأ
+                      </label>
+                      <select
+                        value={country}
+                        onChange={(e) => setCountry(e.target.value)}
+                        className="w-full bg-white/5 border border-[var(--border-primary)] rounded-xl px-4 py-3 text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-brand-500/50 appearance-none transition-all"
+                      >
+                        <option value="" disabled className="text-gray-500">اختر بلد المنشأ</option>
+                        {COUNTRIES.map(c => (
+                          <option key={c.value} value={c.value} className="text-black dark:text-white bg-white dark:bg-gray-800">
+                            {c.flag} {c.label}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                    <div className="space-y-1.5">
+                      <label className="block text-sm font-medium text-[var(--text-primary)]">
+                        نوع التحضير
+                      </label>
+                      <select
+                        value={brewType}
+                        onChange={(e) => setBrewType(e.target.value)}
+                        className="w-full bg-white/5 border border-[var(--border-primary)] rounded-xl px-4 py-3 text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-brand-500/50 appearance-none transition-all"
+                      >
+                        <option value="" disabled className="text-gray-500">اختر نوع التحضير</option>
+                        {BREW_TYPES.map(t => (
+                          <option key={t.value} value={t.value} className="text-black dark:text-white bg-white dark:bg-gray-800">
+                            {t.label}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                  </div>
                 </div>
               </div>
 
@@ -397,7 +450,7 @@ export default function UploadModal({
                   onClick={checkSimilarNames}
                   disabled={!editedTitle.trim()}
                 >
-                  حفظ السجل
+                  حفظ المحصول
                 </Button>
               </div>
             </motion.div>
@@ -466,7 +519,7 @@ export default function UploadModal({
                 saveRecord();
               }}
             >
-              إنشاء سجل جديد منفصل
+              إضافة محصول جديد منفصل
             </Button>
             <Button
               variant="ghost"

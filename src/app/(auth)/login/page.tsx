@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
 import { Mail, Lock, Sparkles, Eye, EyeOff } from "lucide-react";
@@ -53,8 +54,8 @@ export default function LoginPage() {
       <div className="glass-strong rounded-3xl p-8 shadow-xl">
         {/* Logo */}
         <div className="text-center mb-8">
-          <div className="w-16 h-16 mx-auto mb-6 rounded-2xl gradient-brand flex items-center justify-center shadow-lg">
-            <Sparkles className="w-8 h-8 text-white" />
+          <div className="w-16 h-16 mx-auto mb-6 rounded-2xl overflow-hidden flex items-center justify-center shadow-lg relative">
+            <Image src="/logo.jpg" alt="Logo" fill className="object-cover" />
           </div>
           <h1 className="text-2xl font-bold gradient-brand-text mb-2">
             {APP_NAME}
