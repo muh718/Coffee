@@ -166,8 +166,7 @@ export default function RecordDetailPage() {
   };
 
   /* ── Slider helpers ── */
-  const heroImage = images.length > 1 ? images[1] : images[0];
-  const slideImages = images.length > 1 ? images.slice(1) : images;
+  const slideImages = images;
 
   const goNextSlide = useCallback(() => {
     if (slideImages.length <= 1) return;
@@ -252,20 +251,42 @@ export default function RecordDetailPage() {
               <AnimatePresence mode="wait">
                 <motion.img
                   key={slideImages[slideIndex]?.id}
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  exit={{ opacity: 0 }}
-                  transition={{ duration: 0.3 }}
+                  initial={{ opacity: 0, x: 20 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  exit={{ opacity: 0, x: -20 }}
+                  transition={{ duration: 0.2 }}
                   src={slideImages[slideIndex]?.image_url}
                   alt=""
-                  className="max-w-full max-h-[65vh] object-contain cursor-pointer select-none"
+                  className="max-w-full max-h-[65vh] object-contain cursor-grab active:cursor-grabbing select-none touch-pan-y"
                   onClick={() => {
                     const realIdx = images.findIndex((img) => img.id === slideImages[slideIndex]?.id);
                     setLightboxIndex(realIdx >= 0 ? realIdx : 0);
                   }}
+                  drag="x"
+                  dragConstraints={{ left: 0, right: 0 }}
+                  dragElastic={0.2}
+                  onDragEnd={(e, { offset }) => {
+                    const swipe = offset.x;
+                    if (swipe < -50) goNextSlide();
+                    else if (swipe > 50) goPrevSlide();
+                  }}
                   draggable={false}
                 />
               </AnimatePresence>
+
+              {/* Delete Current Image */}
+              {isAdmin && slideImages[slideIndex] && (
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setDeleteImageId(slideImages[slideIndex].id);
+                  }}
+                  className="absolute top-4 start-4 p-2 rounded-full bg-red-500/80 text-white hover:bg-red-500 transition-colors z-10"
+                  title="حذف هذه الصورة"
+                >
+                  <Trash2 className="w-4 h-4" />
+                </button>
+              )}
 
               {/* Nav arrows */}
               {slideImages.length > 1 && (
@@ -368,57 +389,7 @@ export default function RecordDetailPage() {
         </div>
       </div>
 
-      {/* ═══════════ Image Gallery ═══════════ */}
-      <div>
-        <h2 className="text-lg font-semibold text-[var(--text-primary)] mb-4">
-          معرض الصور
-        </h2>
-        {images.length === 0 ? (
-          <div className="text-center py-12 card-static">
-            <ImagesIcon className="w-12 h-12 mx-auto text-[var(--text-tertiary)] mb-3" />
-            <p className="text-sm text-[var(--text-tertiary)]">
-              لا توجد صور في هذا المحصول
-            </p>
-          </div>
-        ) : (
-          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
-            {images.map((image, index) => (
-              <motion.div
-                key={image.id}
-                initial={{ opacity: 0, scale: 0.9 }}
-                animate={{ opacity: 1, scale: 1 }}
-                transition={{ delay: index * 0.05 }}
-                className="group relative aspect-square rounded-xl overflow-hidden bg-[var(--bg-tertiary)] cursor-pointer"
-                onClick={() => setLightboxIndex(index)}
-              >
-                <img
-                  src={image.image_url}
-                  alt=""
-                  className="w-full h-full object-contain transition-transform duration-500 group-hover:scale-110"
-                  loading="lazy"
-                />
-                {/* Hover overlay */}
-                <div className="absolute inset-0 bg-black/0 group-hover:bg-black/30 transition-all duration-300 flex items-end justify-between p-2 opacity-0 group-hover:opacity-100">
-                  <span className="text-[10px] text-white/80">
-                    {formatDate(image.uploaded_at)}
-                  </span>
-                  {isAdmin && (
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        setDeleteImageId(image.id);
-                      }}
-                      className="p-1.5 rounded-lg bg-red-500/80 text-white hover:bg-red-500 transition-colors"
-                    >
-                      <Trash2 className="w-3.5 h-3.5" />
-                    </button>
-                  )}
-                </div>
-              </motion.div>
-            ))}
-          </div>
-        )}
-      </div>
+
 
       {/* Lightbox */}
       <ImageLightbox
