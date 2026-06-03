@@ -355,7 +355,7 @@ export default function RecordDetailPage() {
                 <Avatar
                   name={record.creator?.name || ""}
                   src={record.creator?.avatar_url}
-                  size="xs"
+                  size="sm"
                 />
                 <span className="hidden sm:inline">{record.creator?.name || "غير معروف"}</span>
               </div>
