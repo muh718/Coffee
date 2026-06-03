@@ -82,7 +82,11 @@ export default function RecordDetailPage() {
 
     setRecord(recordRes.data);
     setEditName(recordRes.data.name);
-    setImages(imagesRes.data || []);
+    
+    const loadedImages = imagesRes.data || [];
+    setImages(loadedImages);
+    setSlideIndex(loadedImages.length > 1 ? 1 : 0);
+    
     setIsLoading(false);
   };
 
