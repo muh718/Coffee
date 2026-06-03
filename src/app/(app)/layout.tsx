@@ -1,0 +1,103 @@
+"use client";
+
+import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
+import Header from "@/components/layout/header";
+import { useAuthStore } from "@/stores/auth-store";
+import { createClient } from "@/lib/supabase/client";
+import { cn } from "@/lib/utils";
+
+export default function AppLayout({ children }: { children: React.ReactNode }) {
+  const { setUser, setLoading, isLoading } = useAuthStore();
+  const router = useRouter();
+
+  useEffect(() => {
+    const supabase = createClient();
+
+    const fetchUser = async () => {
+      const {
+        data: { user: authUser },
+      } = await supabase.auth.getUser();
+
+      if (!authUser) {
+        router.push("/login");
+        return;
+      }
+
+      // Fetch user profile from public.users
+      const { data: profile } = await supabase
+        .from("users")
+        .select("*")
+        .eq("id", authUser.id)
+        .single();
+
+      if (profile) {
+        setUser(profile);
+      } else {
+        // Profile not yet synced — use auth data
+        setUser({
+          id: authUser.id,
+          name: authUser.user_metadata?.name || authUser.email?.split("@")[0] || "مستخدم",
+          email: authUser.email || "",
+          role: "user",
+          avatar_url: authUser.user_metadata?.avatar_url || null,
+          created_at: authUser.created_at,
+        });
+      }
+    };
+
+    fetchUser();
+
+    // Listen for auth changes
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange(async (event, session) => {
+      if (event === "SIGNED_OUT") {
+        setUser(null);
+        router.push("/login");
+      }
+    });
+
+    return () => subscription.unsubscribe();
+  }, [setUser, setLoading, router]);
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center gradient-mesh">
+        <div className="text-center space-y-4">
+          <div className="w-12 h-12 mx-auto rounded-2xl gradient-brand flex items-center justify-center animate-pulse-glow">
+            <svg
+              className="w-6 h-6 text-white animate-spin-slow"
+              fill="none"
+              viewBox="0 0 24 24"
+            >
+              <circle
+                className="opacity-25"
+                cx="12"
+                cy="12"
+                r="10"
+                stroke="currentColor"
+                strokeWidth="4"
+              />
+              <path
+                className="opacity-75"
+                fill="currentColor"
+                d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"
+              />
+            </svg>
+          </div>
+          <p className="text-sm text-[var(--text-secondary)]">جاري التحميل...</p>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="min-h-screen flex flex-col">
+      <Header />
+      <main className="flex-1 p-6">
+        {children}
+      </main>
+    </div>
+  );
+}
