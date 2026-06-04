@@ -34,6 +34,10 @@ export const SEARCH_DEBOUNCE_MS = 300;
 // Supabase Storage
 export const STORAGE_BUCKET = "documents";
 
+// Invitations
+export const INVITATION_EXPIRY_MINUTES = 3;
+export const INVITATION_CODE_LENGTH = 6;
+
 // Audit log action labels (Arabic)
 export const AUDIT_ACTION_LABELS: Record<string, string> = {
   CREATE_RECORD: "إنشاء سجل",
@@ -44,6 +48,8 @@ export const AUDIT_ACTION_LABELS: Record<string, string> = {
   VIEW_IMAGE: "عرض صورة",
   DOWNLOAD_IMAGE: "تحميل صورة",
   UPDATE_USER_ROLE: "تغيير صلاحية مستخدم",
+  CREATE_INVITATION: "إنشاء دعوة",
+  REDEEM_INVITATION: "استخدام دعوة",
   LOGIN: "تسجيل دخول",
   LOGOUT: "تسجيل خروج",
 };
@@ -53,3 +59,4 @@ export const ROLE_LABELS: Record<string, string> = {
   admin: "مدير",
   user: "مستخدم",
 };
+

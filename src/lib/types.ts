@@ -10,7 +10,29 @@ export interface User {
   email: string;
   role: UserRole;
   avatar_url: string | null;
+  family_id: string | null;
   created_at: string;
+}
+
+export interface Family {
+  id: string;
+  name: string;
+  owner_id: string;
+  created_at: string;
+}
+
+export interface Invitation {
+  id: string;
+  family_id: string;
+  code: string;
+  invited_role: UserRole;
+  created_by: string;
+  expires_at: string;
+  used_by: string | null;
+  used_at: string | null;
+  created_at: string;
+  // Joined fields
+  creator?: User;
 }
 
 export interface DocRecord {
@@ -94,5 +116,8 @@ export type AuditAction =
   | "VIEW_IMAGE"
   | "DOWNLOAD_IMAGE"
   | "UPDATE_USER_ROLE"
+  | "CREATE_INVITATION"
+  | "REDEEM_INVITATION"
   | "LOGIN"
   | "LOGOUT";
+

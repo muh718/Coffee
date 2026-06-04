@@ -49,6 +49,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
             email: authUser.email || "",
             role: "user",
             avatar_url: authUser.user_metadata?.avatar_url || null,
+            family_id: null,
             created_at: authUser.created_at,
           });
         }
