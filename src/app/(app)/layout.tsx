@@ -15,34 +15,47 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
     const supabase = createClient();
 
     const fetchUser = async () => {
-      const {
-        data: { user: authUser },
-      } = await supabase.auth.getUser();
+      try {
+        const {
+          data: { user: authUser },
+          error: authError
+        } = await supabase.auth.getUser();
 
-      if (!authUser) {
+        if (authError || !authUser) {
+          console.error("Auth error:", authError);
+          setLoading(false);
+          router.push("/login");
+          return;
+        }
+
+        // Fetch user profile from public.users
+        const { data: profile, error: profileError } = await supabase
+          .from("users")
+          .select("*")
+          .eq("id", authUser.id)
+          .single();
+
+        if (profileError && profileError.code !== 'PGRST116') {
+           console.error("Profile fetch error:", profileError);
+        }
+
+        if (profile) {
+          setUser(profile);
+        } else {
+          // Profile not yet synced — use auth data
+          setUser({
+            id: authUser.id,
+            name: authUser.user_metadata?.name || authUser.email?.split("@")[0] || "مستخدم",
+            email: authUser.email || "",
+            role: "user",
+            avatar_url: authUser.user_metadata?.avatar_url || null,
+            created_at: authUser.created_at,
+          });
+        }
+      } catch (err) {
+        console.error("Unexpected auth error:", err);
+        setLoading(false);
         router.push("/login");
-        return;
-      }
-
-      // Fetch user profile from public.users
-      const { data: profile } = await supabase
-        .from("users")
-        .select("*")
-        .eq("id", authUser.id)
-        .single();
-
-      if (profile) {
-        setUser(profile);
-      } else {
-        // Profile not yet synced — use auth data
-        setUser({
-          id: authUser.id,
-          name: authUser.user_metadata?.name || authUser.email?.split("@")[0] || "مستخدم",
-          email: authUser.email || "",
-          role: "user",
-          avatar_url: authUser.user_metadata?.avatar_url || null,
-          created_at: authUser.created_at,
-        });
       }
     };
 
