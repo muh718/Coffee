@@ -55,7 +55,7 @@ export default function LoginPage() {
         {/* Logo */}
         <div className="text-center mb-8">
           <div className="w-16 h-16 mx-auto mb-6 rounded-2xl overflow-hidden flex items-center justify-center shadow-lg relative">
-            <Image src="/logo.jpg" alt="Logo" fill className="object-cover" />
+            <Image src="/logo.png" alt="Logo" fill className="object-cover" />
           </div>
           <h1 className="text-2xl font-bold gradient-brand-text mb-2">
             {APP_NAME}
