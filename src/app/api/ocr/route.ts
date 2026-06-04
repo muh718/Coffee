@@ -9,7 +9,7 @@ function generateTitle(rawText: string): string {
   }
 
   // Clean the text
-  let cleaned = rawText
+  const cleaned = rawText
     .replace(/[\n\r]+/g, " ") // Remove newlines
     .replace(/\s+/g, " ") // Normalize spaces
     .replace(/[^\p{L}\p{N}\s\-\/\.:,،؛]/gu, "") // Keep letters, numbers, basic punctuation

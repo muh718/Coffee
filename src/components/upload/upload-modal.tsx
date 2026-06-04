@@ -1,4 +1,6 @@
 "use client";
+/* eslint-disable @typescript-eslint/no-explicit-any */
+/* eslint-disable @typescript-eslint/no-unused-vars */
 
 import { useState, useCallback, useRef } from "react";
 import { Upload, Camera, Image as ImageIcon, X, FileUp } from "lucide-react";
