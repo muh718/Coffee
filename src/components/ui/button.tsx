@@ -30,7 +30,7 @@ const Button = forwardRef<HTMLButtonElement, ButtonProps>(
 
     const variants = {
       primary:
-        "gradient-brand text-white shadow-md hover:shadow-lg hover:shadow-brand-500/25 focus-visible:outline-brand-500",
+        "gradient-brand text-[#20120b] font-bold shadow-md hover:shadow-lg hover:shadow-[#f5e2b3]/25 focus-visible:outline-[#f5e2b3]",
       secondary:
         "bg-[var(--bg-tertiary)] text-[var(--text-primary)] hover:bg-[var(--bg-card-hover)] border border-[var(--border-primary)] focus-visible:outline-brand-500",
       ghost:

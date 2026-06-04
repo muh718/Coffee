@@ -22,7 +22,7 @@ export async function POST(request: NextRequest) {
 
     // Call the database function directly
     const { data, error } = await supabase.rpc("find_similar_records", {
-      proposed_name: proposedName.trim(),
+      query_name: proposedName.trim(),
     });
 
     if (error) {
