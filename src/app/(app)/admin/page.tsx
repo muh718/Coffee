@@ -360,20 +360,37 @@ function UserManagement() {
   const [users, setUsers] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [roleChangeUser, setRoleChangeUser] = useState<any>(null);
+  const [isFounder, setIsFounder] = useState(false);
   const { user: currentUser } = useAuthStore();
 
   useEffect(() => {
-    const fetchUsers = async () => {
+    const fetchUsersAndFamily = async () => {
       const supabase = createClient();
+      
+      // Check if current user is founder
+      if (currentUser?.family_id) {
+        const { data: family } = await supabase
+          .from("families")
+          .select("owner_id")
+          .eq("id", currentUser.family_id)
+          .single();
+        if (family && family.owner_id === currentUser.id) {
+          setIsFounder(true);
+        }
+      }
+
+      // Fetch users in the same family
       const { data } = await supabase
         .from("users")
         .select("*")
+        .eq("family_id", currentUser?.family_id)
         .order("created_at", { ascending: false });
+        
       setUsers(data || []);
       setIsLoading(false);
     };
-    fetchUsers();
-  }, []);
+    if (currentUser) fetchUsersAndFamily();
+  }, [currentUser]);
 
   const handleRoleChange = async (userId: string, newRole: string) => {
     const supabase = createClient();
@@ -399,6 +416,26 @@ function UserManagement() {
     );
     setRoleChangeUser(null);
     toast.success("تم تغيير الصلاحية");
+  };
+
+  const handleRemoveMember = async (userId: string, userName: string) => {
+    if (!confirm(`هل أنت متأكد من رغبتك في طرد ${userName} من العائلة؟`)) return;
+
+    try {
+      const supabase = createClient();
+      const { data, error } = await supabase.rpc('remove_family_member', { target_user_id: userId });
+      
+      if (error) throw error;
+      
+      if (data && data.success) {
+        toast.success(`تم طرد ${userName} بنجاح`);
+        setUsers((prev) => prev.filter((u) => u.id !== userId));
+      } else {
+        toast.error(data?.error || "حدث خطأ أثناء طرد العضو");
+      }
+    } catch (err: any) {
+      toast.error(err.message || "حدث خطأ غير متوقع");
+    }
   };
 
   return (
@@ -466,13 +503,24 @@ function UserManagement() {
                     </td>
                     <td className="px-6 py-4">
                       {u.id !== currentUser?.id && (
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => setRoleChangeUser(u)}
-                        >
-                          تغيير
-                        </Button>
+                        <div className="flex items-center gap-2">
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => setRoleChangeUser(u)}
+                          >
+                            تغيير
+                          </Button>
+                          {isFounder && (
+                            <Button
+                              variant="danger"
+                              size="sm"
+                              onClick={() => handleRemoveMember(u.id, u.name)}
+                            >
+                              طرد
+                            </Button>
+                          )}
+                        </div>
                       )}
                     </td>
                   </tr>

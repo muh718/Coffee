@@ -46,6 +46,44 @@ export default function Header() {
     router.push("/login");
   };
 
+  const handleCreateFamily = async () => {
+    try {
+      const supabase = createClient();
+      const { data, error } = await supabase.rpc('create_user_family');
+      
+      if (error) throw error;
+      
+      if (data && data.success) {
+        toast.success("تم إنشاء العائلة بنجاح! أنت الآن المدير.");
+        window.location.reload();
+      } else {
+        toast.error(data?.error || "حدث خطأ أثناء إنشاء العائلة");
+      }
+    } catch (err: any) {
+      toast.error(err.message || "حدث خطأ غير متوقع");
+    }
+  };
+
+  const handleLeaveFamily = async () => {
+    if (!confirm("هل أنت متأكد من رغبتك في الخروج من العائلة؟ إذا كنت المالك، سيتم نقل الملكية لأقدم عضو.")) return;
+    
+    try {
+      const supabase = createClient();
+      const { data, error } = await supabase.rpc('leave_family');
+      
+      if (error) throw error;
+      
+      if (data && data.success) {
+        toast.success("تم الخروج من العائلة بنجاح");
+        window.location.reload();
+      } else {
+        toast.error(data?.error || "حدث خطأ أثناء الخروج من العائلة");
+      }
+    } catch (err: any) {
+      toast.error(err.message || "حدث خطأ غير متوقع");
+    }
+  };
+
   const navItems = [
     {
       href: "/dashboard",
@@ -166,17 +204,42 @@ export default function Header() {
                       </p>
                     </div>
                     <div className="py-1">
-                      {/* زر الانضمام لعائلة */}
-                      <button
-                        onClick={() => {
-                          setUserMenuOpen(false);
-                          setShowJoinFamily(true);
-                        }}
-                        className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-tertiary)] transition-colors"
-                      >
-                        <UserPlus className="w-4 h-4" />
-                        الانضمام إلى عائلة
-                      </button>
+                      {/* Family Actions */}
+                      {!user.family_id ? (
+                        <>
+                          <button
+                            onClick={() => {
+                              setUserMenuOpen(false);
+                              handleCreateFamily();
+                            }}
+                            className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-tertiary)] transition-colors"
+                          >
+                            <UserPlus className="w-4 h-4" />
+                            إنشاء عائلة جديدة
+                          </button>
+                          <button
+                            onClick={() => {
+                              setUserMenuOpen(false);
+                              setShowJoinFamily(true);
+                            }}
+                            className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-tertiary)] transition-colors"
+                          >
+                            <UserPlus className="w-4 h-4" />
+                            الانضمام إلى عائلة
+                          </button>
+                        </>
+                      ) : (
+                        <button
+                          onClick={() => {
+                            setUserMenuOpen(false);
+                            handleLeaveFamily();
+                          }}
+                          className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-red-500 hover:bg-red-500/10 transition-colors"
+                        >
+                          <LogOut className="w-4 h-4" />
+                          الخروج من العائلة
+                        </button>
+                      )}
 
                       <button
                         onClick={handleLogout}
