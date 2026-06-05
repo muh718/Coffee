@@ -104,7 +104,7 @@ export default function Header() {
       const updatedUser: User = {
         ...displayUser,
         family_id: familyId,
-        role: 'admin',
+        role: 'admin' as "admin" | "user",
         families: { name: familyName, owner_id: displayUser.id }
       };
       setLocalUser(updatedUser);
@@ -129,7 +129,7 @@ export default function Header() {
           const updatedUser: User = {
             ...displayUser,
             family_id: null,
-            role: 'user',
+            role: 'user' as "admin" | "user",
             families: null
           };
           setLocalUser(updatedUser);
