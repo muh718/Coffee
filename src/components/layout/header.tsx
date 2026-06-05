@@ -20,8 +20,8 @@ export default function Header() {
   const [userMenuOpen, setUserMenuOpen] = useState(false);
   const [navMenuOpen, setNavMenuOpen] = useState(false);
   const [showJoinFamily, setShowJoinFamily] = useState(false);
-  const [familyData, setFamilyData] = useState<Record<string, unknown> | null>(null);
-  const [familyMembers, setFamilyMembers] = useState<Record<string, unknown>[]>([]);
+  const [familyData, setFamilyData] = useState<{ id: string; name: string; owner_id: string } | null>(null);
+  const [familyMembers, setFamilyMembers] = useState<{ id: string; name: string; avatar_url: string | null; role: string }[]>([]);
   const [showMembers, setShowMembers] = useState(false);
   const userMenuRef = useRef<HTMLDivElement>(null);
   const navMenuRef = useRef<HTMLDivElement>(null);
