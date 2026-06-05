@@ -12,6 +12,8 @@ export interface User {
   avatar_url: string | null;
   family_id: string | null;
   created_at: string;
+  // Joined fields
+  families?: { name: string } | null;
 }
 
 export interface Family {

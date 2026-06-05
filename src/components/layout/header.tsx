@@ -20,7 +20,7 @@ export default function Header() {
   const [userMenuOpen, setUserMenuOpen] = useState(false);
   const [navMenuOpen, setNavMenuOpen] = useState(false);
   const [showJoinFamily, setShowJoinFamily] = useState(false);
-  const [familyData, setFamilyData] = useState<{ id: string; name: string; owner_id: string } | null>(null);
+
   const [familyMembers, setFamilyMembers] = useState<{ id: string; name: string; avatar_url: string | null; role: string }[]>([]);
   const [showMembers, setShowMembers] = useState(false);
   const userMenuRef = useRef<HTMLDivElement>(null);
@@ -29,7 +29,7 @@ export default function Header() {
   const pathname = usePathname();
   const isAdmin = user?.role === "admin";
 
-  const isFounder = familyData?.owner_id === user?.id;
+
 
   useEffect(() => {
     function handleClickOutside(e: MouseEvent) {
@@ -45,19 +45,26 @@ export default function Header() {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
-  useEffect(() => {
-    if (user?.family_id && userMenuOpen) {
-      const fetchFamily = async () => {
-        const supabase = createClient();
-        const { data: family } = await supabase.from('families').select('*').eq('id', user.family_id).single();
-        if (family) setFamilyData(family);
-        
-        const { data: members } = await supabase.from('users').select('id, name, avatar_url, role').eq('family_id', user.family_id).order('created_at', { ascending: true });
-        if (members) setFamilyMembers(members);
-      };
-      fetchFamily();
+  // Remove familyData from useState since we fetch it globally
+  // We only fetch familyMembers when showMembers is true
+  const fetchFamilyMembers = async () => {
+    if (!user?.family_id) return;
+    const supabase = createClient();
+    const { data: members } = await supabase
+      .from('users')
+      .select('id, name, avatar_url, role')
+      .eq('family_id', user.family_id)
+      .order('created_at', { ascending: true });
+    
+    if (members) setFamilyMembers(members);
+  };
+
+  const handleToggleMembers = () => {
+    if (!showMembers && familyMembers.length === 0) {
+      fetchFamilyMembers();
     }
-  }, [user?.family_id, userMenuOpen]);
+    setShowMembers(!showMembers);
+  };
 
   const handleLogout = async () => {
     const supabase = createClient();
@@ -67,6 +74,9 @@ export default function Header() {
   };
 
   const handleCreateFamily = async () => {
+    const familyName = prompt("أدخل اسم العائلة:");
+    if (!familyName) return;
+
     try {
       const supabase = createClient();
       const { data, error } = await supabase.rpc('create_user_family');
@@ -74,14 +84,27 @@ export default function Header() {
       if (error) throw error;
       
       if (data && data.success) {
-        toast.success("تم إنشاء العائلة بنجاح! أنت الآن المدير.");
+        // Update family name
+        const { error: updateError } = await supabase
+          .from('families')
+          .update({ name: familyName })
+          .eq('id', data.family_id);
+
+        if (updateError) {
+          toast.error("تم إنشاء العائلة لكن فشل تحديث الاسم");
+        } else {
+          toast.success(`تم إنشاء عائلة ${familyName} بنجاح!`);
+        }
+        
         if (user) {
           setUser({
             ...user,
             family_id: data.family_id,
-            role: 'admin'
+            role: 'admin',
+            families: { name: familyName }
           });
         }
+        router.refresh();
       } else {
         toast.error(data?.error || "حدث خطأ أثناء إنشاء العائلة");
       }
@@ -105,12 +128,13 @@ export default function Header() {
           setUser({
             ...user,
             family_id: null,
-            role: 'user'
+            role: 'user',
+            families: null
           });
-          setFamilyData(null);
           setFamilyMembers([]);
           setShowMembers(false);
         }
+        router.refresh();
       } else {
         toast.error(data?.error || "حدث خطأ أثناء الخروج من العائلة");
       }
@@ -237,12 +261,12 @@ export default function Header() {
                       <p className="text-xs text-[var(--text-tertiary)]">
                         {user.email}
                       </p>
-                      {user.family_id && familyData && (
+                      {user.family_id && user.families && (
                         <button
-                           onClick={() => setShowMembers(!showMembers)}
+                           onClick={handleToggleMembers}
                            className="mt-2 w-full text-start flex items-center justify-between text-xs font-medium text-[var(--brand-primary)] bg-[var(--brand-primary)]/10 px-2 py-1.5 rounded-md hover:bg-[var(--brand-primary)]/20 transition-colors"
                         >
-                           <span>أنت عضو في {familyData.name}</span>
+                           <span>أنت عضو في {user.families.name}</span>
                            <ChevronDown className={`w-3 h-3 transition-transform ${showMembers ? 'rotate-180' : ''}`} />
                         </button>
                       )}
@@ -261,10 +285,22 @@ export default function Header() {
                               <div key={m.id} className="flex items-center gap-2 px-2 py-1.5 rounded-md hover:bg-[var(--bg-card-hover)]">
                                 <Avatar name={m.name} src={m.avatar_url} size="sm" className="w-5 h-5 text-[10px]" />
                                 <span className="text-xs text-[var(--text-secondary)]">
-                                  {m.name} {m.id === familyData?.owner_id && "👑"}
+                                  {m.name} {m.role === 'admin' && "👑"}
                                 </span>
                               </div>
                             ))}
+                          </div>
+                          <div className="p-2 border-t border-[var(--border-primary)]">
+                             <button
+                               onClick={() => {
+                                 setUserMenuOpen(false);
+                                 handleLeaveFamily();
+                               }}
+                               className="w-full flex items-center gap-2 justify-center px-3 py-1.5 text-xs text-red-500 hover:bg-red-500/10 rounded-md transition-colors"
+                             >
+                               <LogOut className="w-3 h-3" />
+                               مغادرة العائلة
+                             </button>
                           </div>
                         </motion.div>
                       )}
@@ -297,7 +333,7 @@ export default function Header() {
                         </>
                       ) : (
                         <>
-                          {isFounder && (
+                          {isAdmin && (
                             <Link
                               href="/admin"
                               onClick={() => setUserMenuOpen(false)}
@@ -307,16 +343,6 @@ export default function Header() {
                               إرسال دعوة للانضمام
                             </Link>
                           )}
-                          <button
-                            onClick={() => {
-                              setUserMenuOpen(false);
-                              handleLeaveFamily();
-                            }}
-                            className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-red-500 hover:bg-red-500/10 transition-colors"
-                          >
-                            <LogOut className="w-4 h-4" />
-                            الخروج من العائلة
-                          </button>
                         </>
                       )}
 
