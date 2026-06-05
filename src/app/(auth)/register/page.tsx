@@ -73,9 +73,6 @@ export default function RegisterPage() {
           <h1 className="text-2xl font-bold text-[var(--text-primary)]">
             إنشاء حساب جديد
           </h1>
-          <p className="text-sm text-[var(--text-secondary)] mt-1">
-            انضم إلى الأرشيف الذكي
-          </p>
         </div>
 
         {/* Form */}
