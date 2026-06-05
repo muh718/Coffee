@@ -4,7 +4,7 @@ import { useState, useRef, useEffect } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { usePathname, useRouter } from "next/navigation";
-import { LogOut, ChevronDown, Menu, LayoutDashboard, Shield, BarChart3, UserPlus } from "lucide-react";
+import { LogOut, ChevronDown, Menu, LayoutDashboard, Shield, BarChart3, UserPlus, Users } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import ThemeToggle from "@/components/ui/theme-toggle";
 import Avatar from "@/components/ui/avatar";
@@ -30,6 +30,7 @@ export default function Header() {
   const router = useRouter();
   const pathname = usePathname();
   const isAdmin = user?.role === "admin";
+  const isFounder = user?.families?.owner_id === user?.id;
 
 
 
@@ -81,7 +82,7 @@ export default function Header() {
         ...user,
         family_id: familyId,
         role: 'admin',
-        families: { name: familyName }
+        families: { name: familyName, owner_id: user.id }
       });
     }
     toast.success(`تم إنشاء عائلة ${familyName} بنجاح!`);
@@ -239,9 +240,9 @@ export default function Header() {
                       {user.family_id && user.families && (
                         <button
                            onClick={handleToggleMembers}
-                           className="mt-2 w-full text-start flex items-center justify-between text-xs font-medium text-[var(--brand-primary)] bg-[var(--brand-primary)]/10 px-2 py-1.5 rounded-md hover:bg-[var(--brand-primary)]/20 transition-colors"
+                           className="mt-1 w-full text-start flex items-center justify-between text-xs font-medium text-[var(--brand-primary)] hover:text-[var(--brand-primary)]/80 transition-colors"
                         >
-                           <span>أنت عضو في {user.families.name}</span>
+                           <span>{user.families.name}</span>
                            <ChevronDown className={`w-3 h-3 transition-transform ${showMembers ? 'rotate-180' : ''}`} />
                         </button>
                       )}
@@ -308,15 +309,23 @@ export default function Header() {
                         </>
                       ) : (
                         <>
-                          {isAdmin && (
+                          {isFounder ? (
                             <Link
                               href="/admin"
                               onClick={() => setUserMenuOpen(false)}
-                              className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-tertiary)] transition-colors"
+                              className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-[var(--brand-primary)] hover:bg-[var(--bg-tertiary)] transition-colors"
                             >
                               <UserPlus className="w-4 h-4" />
-                              إرسال دعوة للانضمام
+                              إرسال دعوة للانضمام إلى العائلة
                             </Link>
+                          ) : (
+                            <button
+                               onClick={handleToggleMembers}
+                               className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-[var(--text-secondary)] hover:bg-[var(--bg-tertiary)] transition-colors"
+                            >
+                               <Users className="w-4 h-4" />
+                               أنت عضو في {user.families?.name}
+                            </button>
                           )}
                         </>
                       )}

@@ -13,7 +13,7 @@ export interface User {
   family_id: string | null;
   created_at: string;
   // Joined fields
-  families?: { name: string } | null;
+  families?: { name: string; owner_id: string } | null;
 }
 
 export interface Family {

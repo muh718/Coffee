@@ -31,7 +31,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
         // Fetch user profile from public.users
         const { data: profile, error: profileError } = await supabase
           .from("users")
-          .select("*, families(name)")
+          .select("*, families(name, owner_id)")
           .eq("id", authUser.id)
           .single();
 
