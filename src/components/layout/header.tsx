@@ -25,7 +25,7 @@ export default function Header() {
   const [showJoinFamily, setShowJoinFamily] = useState(false);
   const [showCreateFamily, setShowCreateFamily] = useState(false);
 
-  const [familyMembers, setFamilyMembers] = useState<{ id: string; name: string; avatar_url: string | null; role: string }[]>([]);
+  const [familyMembers, setFamilyMembers] = useState<{ id: string; name: string; avatar_url: string | null; role: string; family_role: string }[]>([]);
   const [showMembers, setShowMembers] = useState(false);
   const userMenuRef = useRef<HTMLDivElement>(null);
   const navMenuRef = useRef<HTMLDivElement>(null);
@@ -83,7 +83,7 @@ export default function Header() {
     const supabase = createClient();
     const { data: members } = await supabase
       .from('users')
-      .select('id, name, avatar_url, role')
+      .select('id, name, avatar_url, role, family_role')
       .eq('family_id', displayUser.family_id)
       .order('created_at', { ascending: true });
     
@@ -104,6 +104,99 @@ export default function Header() {
     router.push("/login");
   };
 
+
+
+  const handleLeaveFamily = async () => {
+    if (!confirm("هل أنت متأكد من رغبتك في الخروج من العائلة؟ إذا كنت المالك، سيتم نقل الملكية لأقدم عضو.")) return;
+    
+    try {
+      const supabase = createClient();
+      const { data, error } = await supabase.rpc('leave_family');
+      
+      if (error) throw error;
+      
+      if (data && data.success) {
+        // Refresh local UI to hide dropdown immediately
+        if (displayUser) {
+          const updatedUser: User = {
+            ...displayUser,
+            family_id: null,
+            families: undefined
+          };
+          setLocalUser(updatedUser);
+          setUser(updatedUser);
+          setFamilyMembers([]);
+          setShowMembers(false);
+        }
+        toast.success("تمت مغادرة العائلة بنجاح");
+        router.refresh();
+      }
+    } catch (error) {
+      console.error('Leave family error:', error);
+      toast.error("حدث خطأ غير متوقع");
+    }
+  };
+
+  const handleDeleteAccount = async () => {
+    if (window.confirm("هل أنت متأكد من أنك تريد حذف حسابك نهائياً؟ هذا الإجراء لا يمكن التراجع عنه وسيحذف جميع بياناتك!")) {
+      try {
+        const response = await fetch('/api/user/delete', { method: 'POST' });
+        const result = await response.json();
+        if (!result.success) {
+          toast.error(result.error || "فشل في حذف الحساب");
+        } else {
+          toast.success("تم حذف الحساب بنجاح");
+          window.location.href = '/login';
+        }
+      } catch (error) {
+        console.error('Delete account error:', error);
+        toast.error("حدث خطأ أثناء محاولة حذف الحساب");
+      }
+    }
+  };
+
+  const handleKickMember = async (memberId: string, memberName: string) => {
+    if (window.confirm(`هل أنت متأكد من طرد ${memberName} من العائلة؟`)) {
+      try {
+        const response = await fetch('/api/family/kick', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ targetUserId: memberId })
+        });
+        const result = await response.json();
+        if (!result.success) {
+          toast.error(result.error || "فشل في إزالة العضو");
+        } else {
+          toast.success(`تم طرد ${memberName} بنجاح`);
+          fetchFamilyMembers(); // Refresh members list
+        }
+      } catch (error) {
+        console.error('Kick member error:', error);
+        toast.error("حدث خطأ أثناء محاولة طرد العضو");
+      }
+    }
+  };
+
+  const handleRoleChange = async (memberId: string, newRole: string) => {
+    try {
+      const response = await fetch('/api/family/role', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ targetUserId: memberId, role: newRole })
+      });
+      const result = await response.json();
+      if (!result.success) {
+        toast.error(result.error || "فشل في تحديث الصلاحية");
+      } else {
+        toast.success("تم تحديث الصلاحية بنجاح");
+        fetchFamilyMembers(); // Refresh members list
+      }
+    } catch (error) {
+      console.error('Change role error:', error);
+      toast.error("حدث خطأ أثناء محاولة تحديث الصلاحية");
+    }
+  };
+
   const handleCreateFamilySuccess = (familyName: string, familyId: string) => {
     if (displayUser) {
       const updatedUser: User = {
@@ -117,38 +210,6 @@ export default function Header() {
     }
     toast.success(`تم إنشاء عائلة ${familyName} بنجاح!`);
     window.location.reload();
-  };
-
-  const handleLeaveFamily = async () => {
-    if (!confirm("هل أنت متأكد من رغبتك في الخروج من العائلة؟ إذا كنت المالك، سيتم نقل الملكية لأقدم عضو.")) return;
-    
-    try {
-      const supabase = createClient();
-      const { data, error } = await supabase.rpc('leave_family');
-      
-      if (error) throw error;
-      
-      if (data && data.success) {
-        toast.success("تم الخروج من العائلة بنجاح");
-        if (displayUser) {
-          const updatedUser: User = {
-            ...displayUser,
-            family_id: null,
-            role: 'user' as "admin" | "user",
-            families: null
-          };
-          setLocalUser(updatedUser);
-          setUser(updatedUser);
-          setFamilyMembers([]);
-          setShowMembers(false);
-        }
-        router.refresh();
-      } else {
-        toast.error(data?.error || "حدث خطأ أثناء الخروج من العائلة");
-      }
-    } catch (err: unknown) {
-      toast.error((err as Error).message || "حدث خطأ غير متوقع");
-    }
   };
 
   const navItems = [
@@ -290,11 +351,33 @@ export default function Header() {
                         >
                           <div className="p-2 space-y-1 max-h-32 overflow-y-auto custom-scrollbar">
                             {familyMembers.map((m) => (
-                              <div key={m.id} className="flex items-center gap-2 px-2 py-1.5 rounded-md hover:bg-[var(--bg-card-hover)]">
-                                <Avatar name={m.name} src={m.avatar_url} size="sm" className="w-5 h-5 text-[10px]" />
-                                <span className="text-xs text-[var(--text-secondary)]">
-                                  {m.name} {m.role === 'admin' && "👑"}
-                                </span>
+                              <div key={m.id} className="flex flex-col gap-1 px-2 py-1.5 rounded-md hover:bg-[var(--bg-card-hover)] border-b border-[var(--border-primary)] last:border-0">
+                                <div className="flex items-center gap-2">
+                                  <Avatar name={m.name} src={m.avatar_url} size="sm" className="w-5 h-5 text-[10px]" />
+                                  <span className="text-xs text-[var(--text-secondary)]">
+                                    {m.name} {m.id === displayUser.families?.owner_id && "👑"}
+                                  </span>
+                                </div>
+                                
+                                {isFounder && m.id !== displayUser.id && (
+                                  <div className="flex items-center gap-2 mt-1 justify-between ps-7">
+                                    <select
+                                      value={m.family_role || 'member'}
+                                      onChange={(e) => handleRoleChange(m.id, e.target.value)}
+                                      className="text-[10px] bg-[var(--bg-primary)] border border-[var(--border-primary)] rounded px-1 py-0.5 text-[var(--text-secondary)] focus:outline-none"
+                                    >
+                                      <option value="member">عضو</option>
+                                      <option value="admin">مدير</option>
+                                    </select>
+                                    
+                                    <button 
+                                      onClick={() => handleKickMember(m.id, m.name)}
+                                      className="text-[10px] text-red-500 hover:underline"
+                                    >
+                                      طرد
+                                    </button>
+                                  </div>
+                                )}
                               </div>
                             ))}
                           </div>
@@ -364,10 +447,18 @@ export default function Header() {
 
                       <button
                         onClick={handleLogout}
-                        className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-red-500 hover:bg-red-500/10 transition-colors"
+                        className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-[var(--text-secondary)] hover:bg-[var(--bg-tertiary)] transition-colors border-t border-[var(--border-primary)] mt-1"
                       >
                         <LogOut className="w-4 h-4" />
                         تسجيل الخروج
+                      </button>
+
+                      <button
+                        onClick={handleDeleteAccount}
+                        className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-red-500 hover:bg-red-500/10 transition-colors"
+                      >
+                        <LogOut className="w-4 h-4" />
+                        حذف الحساب نهائياً
                       </button>
                     </div>
                   </motion.div>

@@ -16,6 +16,7 @@ export default function RegisterPage() {
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [isSuccess, setIsSuccess] = useState(false);
   const router = useRouter();
 
   const handleRegister = async (e: React.FormEvent) => {
@@ -49,9 +50,11 @@ export default function RegisterPage() {
       return;
     }
 
-    toast.success("تم إنشاء الحساب بنجاح! 🎉");
-    router.push("/dashboard");
-    router.refresh();
+    setIsSuccess(true);
+    setName("");
+    setEmail("");
+    setPassword("");
+    setIsLoading(false);
   };
 
   return (
@@ -75,62 +78,74 @@ export default function RegisterPage() {
         </div>
 
         {/* Form */}
-        <form onSubmit={handleRegister} className="space-y-5">
-          <Input
-            label="الاسم الكامل"
-            type="text"
-            value={name}
-            onChange={(e) => setName(e.target.value)}
-            placeholder="محمد أحمد"
-            icon={<User className="w-4 h-4" />}
-            autoComplete="name"
-          />
-
-          <Input
-            label="البريد الإلكتروني"
-            type="email"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            placeholder="name@example.com"
-            icon={<Mail className="w-4 h-4" />}
-            dir="ltr"
-            autoComplete="email"
-          />
-
-          <div className="relative">
+        {!isSuccess ? (
+          <form onSubmit={handleRegister} className="space-y-5">
             <Input
-              label="كلمة المرور"
-              type={showPassword ? "text" : "password"}
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              placeholder="6 أحرف على الأقل"
-              icon={<Lock className="w-4 h-4" />}
-              dir="ltr"
-              autoComplete="new-password"
+              label="الاسم الكامل"
+              type="text"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              placeholder="محمد أحمد"
+              icon={<User className="w-4 h-4" />}
+              autoComplete="name"
             />
-            <button
-              type="button"
-              onClick={() => setShowPassword(!showPassword)}
-              className="absolute end-3 top-[38px] text-[var(--text-tertiary)] hover:text-[var(--text-secondary)] transition-colors"
-            >
-              {showPassword ? (
-                <EyeOff className="w-4 h-4" />
-              ) : (
-                <Eye className="w-4 h-4" />
-              )}
-            </button>
-          </div>
 
-          <Button
-            type="submit"
-            variant="primary"
-            size="lg"
-            isLoading={isLoading}
-            className="w-full"
-          >
-            إنشاء الحساب
-          </Button>
-        </form>
+            <Input
+              label="البريد الإلكتروني"
+              type="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              placeholder="name@example.com"
+              icon={<Mail className="w-4 h-4" />}
+              dir="ltr"
+              autoComplete="email"
+            />
+
+            <div className="relative">
+              <Input
+                label="كلمة المرور"
+                type={showPassword ? "text" : "password"}
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                placeholder="6 أحرف على الأقل"
+                icon={<Lock className="w-4 h-4" />}
+                dir="ltr"
+                autoComplete="new-password"
+              />
+              <button
+                type="button"
+                onClick={() => setShowPassword(!showPassword)}
+                className="absolute end-3 top-[38px] text-[var(--text-tertiary)] hover:text-[var(--text-secondary)] transition-colors"
+              >
+                {showPassword ? (
+                  <EyeOff className="w-4 h-4" />
+                ) : (
+                  <Eye className="w-4 h-4" />
+                )}
+              </button>
+            </div>
+
+            <Button
+              type="submit"
+              variant="primary"
+              size="lg"
+              isLoading={isLoading}
+              className="w-full"
+            >
+              إنشاء الحساب
+            </Button>
+          </form>
+        ) : (
+          <div className="text-center space-y-4 py-4">
+            <div className="w-16 h-16 mx-auto rounded-full bg-green-500/10 flex items-center justify-center">
+              <Sparkles className="w-8 h-8 text-green-500" />
+            </div>
+            <h3 className="text-xl font-bold text-green-500">تم التسجيل بنجاح!</h3>
+            <p className="text-[var(--text-secondary)] leading-relaxed">
+              يرجى التحقق من بريدك الإلكتروني لتفعيل الحساب قبل تسجيل الدخول.
+            </p>
+          </div>
+        )}
 
         {/* Login Link */}
         <p className="text-center text-sm text-[var(--text-secondary)] mt-6">
