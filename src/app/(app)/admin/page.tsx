@@ -118,7 +118,20 @@ function InvitationManagement() {
   const timerRef = useRef<NodeJS.Timeout | null>(null);
   const [countdown, setCountdown] = useState(0);
 
+  const fetchInvitations = async () => {
+    try {
+      const res = await fetch("/api/invitations");
+      const data = await res.json();
+      setInvitations(data.invitations || []);
+    } catch {
+      console.error("Failed to fetch invitations");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   useEffect(() => {
+    // eslint-disable-next-line
     fetchInvitations();
   }, []);
 
@@ -136,18 +149,6 @@ function InvitationManagement() {
     }, 1000);
     return () => clearInterval(interval);
   }, [countdown]);
-
-  const fetchInvitations = async () => {
-    try {
-      const res = await fetch("/api/invitations");
-      const data = await res.json();
-      setInvitations(data.invitations || []);
-    } catch {
-      console.error("Failed to fetch invitations");
-    } finally {
-      setIsLoading(false);
-    }
-  };
 
   const createInvitation = async () => {
     setIsCreating(true);

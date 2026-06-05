@@ -20,8 +20,8 @@ export default function Header() {
   const [userMenuOpen, setUserMenuOpen] = useState(false);
   const [navMenuOpen, setNavMenuOpen] = useState(false);
   const [showJoinFamily, setShowJoinFamily] = useState(false);
-  const [familyData, setFamilyData] = useState<any>(null);
-  const [familyMembers, setFamilyMembers] = useState<any[]>([]);
+  const [familyData, setFamilyData] = useState<Record<string, unknown> | null>(null);
+  const [familyMembers, setFamilyMembers] = useState<Record<string, unknown>[]>([]);
   const [showMembers, setShowMembers] = useState(false);
   const userMenuRef = useRef<HTMLDivElement>(null);
   const navMenuRef = useRef<HTMLDivElement>(null);
@@ -79,8 +79,8 @@ export default function Header() {
       } else {
         toast.error(data?.error || "حدث خطأ أثناء إنشاء العائلة");
       }
-    } catch (err: any) {
-      toast.error(err.message || "حدث خطأ غير متوقع");
+    } catch (err: unknown) {
+      toast.error((err as Error).message || "حدث خطأ غير متوقع");
     }
   };
 
@@ -99,8 +99,8 @@ export default function Header() {
       } else {
         toast.error(data?.error || "حدث خطأ أثناء الخروج من العائلة");
       }
-    } catch (err: any) {
-      toast.error(err.message || "حدث خطأ غير متوقع");
+    } catch (err: unknown) {
+      toast.error((err as Error).message || "حدث خطأ غير متوقع");
     }
   };
 
