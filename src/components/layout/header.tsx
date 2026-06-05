@@ -9,6 +9,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import ThemeToggle from "@/components/ui/theme-toggle";
 import Avatar from "@/components/ui/avatar";
 import JoinFamilyModal from "@/components/family/join-family-modal";
+import CreateFamilyModal from "@/components/family/create-family-modal";
 import { useAuthStore } from "@/stores/auth-store";
 import { createClient } from "@/lib/supabase/client";
 import { toast } from "sonner";
@@ -20,6 +21,7 @@ export default function Header() {
   const [userMenuOpen, setUserMenuOpen] = useState(false);
   const [navMenuOpen, setNavMenuOpen] = useState(false);
   const [showJoinFamily, setShowJoinFamily] = useState(false);
+  const [showCreateFamily, setShowCreateFamily] = useState(false);
 
   const [familyMembers, setFamilyMembers] = useState<{ id: string; name: string; avatar_url: string | null; role: string }[]>([]);
   const [showMembers, setShowMembers] = useState(false);
@@ -73,44 +75,17 @@ export default function Header() {
     router.push("/login");
   };
 
-  const handleCreateFamily = async () => {
-    const familyName = prompt("أدخل اسم العائلة:");
-    if (!familyName) return;
-
-    try {
-      const supabase = createClient();
-      const { data, error } = await supabase.rpc('create_user_family');
-      
-      if (error) throw error;
-      
-      if (data && data.success) {
-        // Update family name
-        const { error: updateError } = await supabase
-          .from('families')
-          .update({ name: familyName })
-          .eq('id', data.family_id);
-
-        if (updateError) {
-          toast.error("تم إنشاء العائلة لكن فشل تحديث الاسم");
-        } else {
-          toast.success(`تم إنشاء عائلة ${familyName} بنجاح!`);
-        }
-        
-        if (user) {
-          setUser({
-            ...user,
-            family_id: data.family_id,
-            role: 'admin',
-            families: { name: familyName }
-          });
-        }
-        router.refresh();
-      } else {
-        toast.error(data?.error || "حدث خطأ أثناء إنشاء العائلة");
-      }
-    } catch (err: unknown) {
-      toast.error((err as Error).message || "حدث خطأ غير متوقع");
+  const handleCreateFamilySuccess = (familyName: string, familyId: string) => {
+    if (user) {
+      setUser({
+        ...user,
+        family_id: familyId,
+        role: 'admin',
+        families: { name: familyName }
+      });
     }
+    toast.success(`تم إنشاء عائلة ${familyName} بنجاح!`);
+    window.location.reload();
   };
 
   const handleLeaveFamily = async () => {
@@ -313,7 +288,7 @@ export default function Header() {
                           <button
                             onClick={() => {
                               setUserMenuOpen(false);
-                              handleCreateFamily();
+                              setShowCreateFamily(true);
                             }}
                             className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-tertiary)] transition-colors"
                           >
@@ -369,6 +344,13 @@ export default function Header() {
         onSuccess={() => {
           toast.success("تم الانضمام للعائلة بنجاح!");
         }}
+      />
+
+      {/* Create Family Modal */}
+      <CreateFamilyModal
+        isOpen={showCreateFamily}
+        onClose={() => setShowCreateFamily(false)}
+        onSuccess={handleCreateFamilySuccess}
       />
     </>
   );
