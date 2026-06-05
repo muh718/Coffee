@@ -65,15 +65,19 @@ export default function RecordCard({
               {name}
             </h3>
 
-            {/* Country on one side, brew type on the other */}
+            {/* Country and brew type stacked */}
             {(countryOfOrigin || brewType) && (
-              <div className="flex items-center justify-between text-sm text-[var(--text-tertiary)]">
-                <span>
-                  {countryOfOrigin
-                    ? `${COUNTRY_FLAGS[countryOfOrigin] || "🌍"} ${countryOfOrigin}`
-                    : ""}
-                </span>
-                <span>{brewType || ""}</span>
+              <div className="flex flex-col items-center justify-center gap-1 text-xs text-[var(--text-tertiary)]">
+                {countryOfOrigin && (
+                  <span>
+                    {`${COUNTRY_FLAGS[countryOfOrigin] || "🌍"} ${countryOfOrigin}`}
+                  </span>
+                )}
+                {brewType && (
+                  <span className="bg-[var(--bg-tertiary)] px-2 py-0.5 rounded-full text-[10px]">
+                    {brewType}
+                  </span>
+                )}
               </div>
             )}
           </div>
