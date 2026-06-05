@@ -16,7 +16,7 @@ import { APP_NAME } from "@/lib/constants";
 import { cn } from "@/lib/utils";
 
 export default function Header() {
-  const { user } = useAuthStore();
+  const { user, setUser } = useAuthStore();
   const [userMenuOpen, setUserMenuOpen] = useState(false);
   const [navMenuOpen, setNavMenuOpen] = useState(false);
   const [showJoinFamily, setShowJoinFamily] = useState(false);
@@ -75,7 +75,13 @@ export default function Header() {
       
       if (data && data.success) {
         toast.success("تم إنشاء العائلة بنجاح! أنت الآن المدير.");
-        window.location.reload();
+        if (user) {
+          setUser({
+            ...user,
+            family_id: data.family_id,
+            role: 'admin'
+          });
+        }
       } else {
         toast.error(data?.error || "حدث خطأ أثناء إنشاء العائلة");
       }
@@ -95,7 +101,16 @@ export default function Header() {
       
       if (data && data.success) {
         toast.success("تم الخروج من العائلة بنجاح");
-        window.location.reload();
+        if (user) {
+          setUser({
+            ...user,
+            family_id: null,
+            role: 'user'
+          });
+          setFamilyData(null);
+          setFamilyMembers([]);
+          setShowMembers(false);
+        }
       } else {
         toast.error(data?.error || "حدث خطأ أثناء الخروج من العائلة");
       }
