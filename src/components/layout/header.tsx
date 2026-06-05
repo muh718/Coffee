@@ -15,9 +15,11 @@ import { createClient } from "@/lib/supabase/client";
 import { toast } from "sonner";
 import { APP_NAME } from "@/lib/constants";
 import { cn } from "@/lib/utils";
+import type { User } from "@/lib/types";
 
 export default function Header() {
-  const { user, setUser } = useAuthStore();
+  const { user: storeUser, setUser } = useAuthStore();
+  const [localUser, setLocalUser] = useState<User | null>(storeUser);
   const [userMenuOpen, setUserMenuOpen] = useState(false);
   const [navMenuOpen, setNavMenuOpen] = useState(false);
   const [showJoinFamily, setShowJoinFamily] = useState(false);
@@ -29,9 +31,30 @@ export default function Header() {
   const navMenuRef = useRef<HTMLDivElement>(null);
   const router = useRouter();
   const pathname = usePathname();
-  const isAdmin = user?.role === "admin";
-  const isFounder = user?.families?.owner_id === user?.id;
+  const displayUser = localUser || storeUser;
+  const isAdmin = displayUser?.role === "admin";
+  const isFounder = displayUser?.families?.owner_id === displayUser?.id;
 
+  // FETCH REAL DATA logic as requested
+  useEffect(() => {
+    const fetchRealData = async () => {
+      const supabase = createClient();
+      const { data: { user: authUser } } = await supabase.auth.getUser();
+      if (!authUser) return;
+      
+      const { data: profile } = await supabase
+        .from('users')
+        .select('*, families(name, owner_id)')
+        .eq('id', authUser.id)
+        .single();
+        
+      if (profile) {
+        setLocalUser(profile);
+        setUser(profile); // Sync global store
+      }
+    };
+    fetchRealData();
+  }, [setUser]);
 
 
   useEffect(() => {
@@ -51,12 +74,12 @@ export default function Header() {
   // Remove familyData from useState since we fetch it globally
   // We only fetch familyMembers when showMembers is true
   const fetchFamilyMembers = async () => {
-    if (!user?.family_id) return;
+    if (!displayUser?.family_id) return;
     const supabase = createClient();
     const { data: members } = await supabase
       .from('users')
       .select('id, name, avatar_url, role')
-      .eq('family_id', user.family_id)
+      .eq('family_id', displayUser.family_id)
       .order('created_at', { ascending: true });
     
     if (members) setFamilyMembers(members);
@@ -77,13 +100,15 @@ export default function Header() {
   };
 
   const handleCreateFamilySuccess = (familyName: string, familyId: string) => {
-    if (user) {
-      setUser({
-        ...user,
+    if (displayUser) {
+      const updatedUser: User = {
+        ...displayUser,
         family_id: familyId,
         role: 'admin',
-        families: { name: familyName, owner_id: user.id }
-      });
+        families: { name: familyName, owner_id: displayUser.id }
+      };
+      setLocalUser(updatedUser);
+      setUser(updatedUser);
     }
     toast.success(`تم إنشاء عائلة ${familyName} بنجاح!`);
     window.location.reload();
@@ -100,13 +125,15 @@ export default function Header() {
       
       if (data && data.success) {
         toast.success("تم الخروج من العائلة بنجاح");
-        if (user) {
-          setUser({
-            ...user,
+        if (displayUser) {
+          const updatedUser: User = {
+            ...displayUser,
             family_id: null,
             role: 'user',
             families: null
-          });
+          };
+          setLocalUser(updatedUser);
+          setUser(updatedUser);
           setFamilyMembers([]);
           setShowMembers(false);
         }
@@ -204,15 +231,15 @@ export default function Header() {
           <ThemeToggle />
 
           {/* User Menu */}
-          {user && (
+          {displayUser && (
             <div ref={userMenuRef} className="relative">
               <button
                 onClick={() => setUserMenuOpen(!userMenuOpen)}
                 className="flex items-center gap-2 p-1.5 rounded-xl hover:bg-[var(--bg-tertiary)] transition-colors"
               >
-                <Avatar name={user.name} src={user.avatar_url} size="sm" />
+                <Avatar name={displayUser.name} src={displayUser.avatar_url} size="sm" />
                 <span className="text-sm font-medium text-[var(--text-primary)] hidden md:inline">
-                  {user.name}
+                  {displayUser.name}
                 </span>
                 <ChevronDown
                   className={`w-4 h-4 text-[var(--text-tertiary)] transition-transform ${
@@ -232,17 +259,17 @@ export default function Header() {
                   >
                     <div className="p-3 border-b border-[var(--border-primary)]">
                       <p className="text-sm font-semibold text-[var(--text-primary)]">
-                        {user.name}
+                        {displayUser?.name}
                       </p>
                       <p className="text-xs text-[var(--text-tertiary)]">
-                        {user.email}
+                        {displayUser?.email}
                       </p>
-                      {user.family_id && user.families && (
+                      {displayUser?.family_id && displayUser?.families && (
                         <button
                            onClick={handleToggleMembers}
                            className="mt-1 w-full text-start flex items-center justify-between text-xs font-medium text-[var(--brand-primary)] hover:text-[var(--brand-primary)]/80 transition-colors"
                         >
-                           <span>{user.families.name}</span>
+                           <span>{displayUser.families.name}</span>
                            <ChevronDown className={`w-3 h-3 transition-transform ${showMembers ? 'rotate-180' : ''}`} />
                         </button>
                       )}
@@ -284,7 +311,7 @@ export default function Header() {
 
                     <div className="py-1">
                       {/* Family Actions */}
-                      {!user.family_id ? (
+                      {!displayUser?.family_id ? (
                         <>
                           <button
                             onClick={() => {
@@ -324,7 +351,7 @@ export default function Header() {
                                className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-[var(--text-secondary)] hover:bg-[var(--bg-tertiary)] transition-colors"
                             >
                                <Users className="w-4 h-4" />
-                               أنت عضو في {user.families?.name}
+                               أنت عضو في {displayUser?.families?.name}
                             </button>
                           )}
                         </>
