@@ -41,6 +41,7 @@ export default function RegisterPage() {
           name,
           full_name: name,
         },
+        emailRedirectTo: `${window.location.origin}/auth/callback`,
       },
     });
 
@@ -142,7 +143,7 @@ export default function RegisterPage() {
             </div>
             <h3 className="text-xl font-bold text-green-500">تم التسجيل بنجاح!</h3>
             <p className="text-[var(--text-secondary)] leading-relaxed">
-              يرجى التحقق من بريدك الإلكتروني لتفعيل الحساب قبل تسجيل الدخول.
+              تم إنشاء حسابك بنجاح. يرجى التحقق من بريدك الإلكتروني والضغط على رابط التأكيد لتفعيل الحساب.
             </p>
           </div>
         )}

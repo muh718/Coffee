@@ -35,7 +35,11 @@ export default function LoginPage() {
     });
 
     if (error) {
-      toast.error("فشل تسجيل الدخول. تأكد من البريد وكلمة المرور.");
+      if (error.message.includes("Email not confirmed")) {
+        toast.error("عذراً، يجب تأكيد بريدك الإلكتروني أولاً لتتمكن من تسجيل الدخول. يرجى مراجعة صندوق الوارد الخاص بك.");
+      } else {
+        toast.error("فشل تسجيل الدخول. تأكد من البريد وكلمة المرور.");
+      }
       setIsLoading(false);
       return;
     }
