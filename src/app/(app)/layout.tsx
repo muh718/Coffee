@@ -36,7 +36,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
           .single();
 
         if (profileError && profileError.code !== 'PGRST116') {
-           console.error("Profile fetch error:", profileError);
+           console.error("Profile fetch error:", JSON.stringify(profileError, null, 2), profileError.message);
         }
 
         if (profile) {
