@@ -4,7 +4,7 @@ import { useState, useRef, useEffect } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { usePathname, useRouter } from "next/navigation";
-import { LogOut, ChevronDown, Menu, LayoutDashboard, Shield, BarChart3, UserPlus, Users } from "lucide-react";
+import { LogOut, ChevronDown, Menu, LayoutDashboard, Shield, BarChart3, UserPlus, Users, MinusCircle } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import ThemeToggle from "@/components/ui/theme-toggle";
 import Avatar from "@/components/ui/avatar";
@@ -156,7 +156,7 @@ export default function Header() {
   };
 
   const handleKickMember = async (memberId: string, memberName: string) => {
-    if (window.confirm(`هل أنت متأكد من طرد ${memberName} من العائلة؟`)) {
+    if (window.confirm(`هل أنت متأكد من إزالة ${memberName} من العائلة؟`)) {
       try {
         const response = await fetch('/api/family/kick', {
           method: 'POST',
@@ -167,12 +167,12 @@ export default function Header() {
         if (!result.success) {
           toast.error(result.error || "فشل في إزالة العضو");
         } else {
-          toast.success(`تم طرد ${memberName} بنجاح`);
+          toast.success(`تم إزالة ${memberName} بنجاح`);
           fetchFamilyMembers(); // Refresh members list
         }
       } catch (error) {
         console.error('Kick member error:', error);
-        toast.error("حدث خطأ أثناء محاولة طرد العضو");
+        toast.error("حدث خطأ أثناء محاولة إزالة العضو");
       }
     }
   };
@@ -372,9 +372,10 @@ export default function Header() {
                                     
                                     <button 
                                       onClick={() => handleKickMember(m.id, m.name)}
-                                      className="text-[10px] text-red-500 hover:underline"
+                                      className="text-[10px] text-red-500 hover:bg-red-500/10 px-2 py-1 rounded-full flex items-center gap-1 transition-colors"
                                     >
-                                      طرد
+                                      إزالة
+                                      <MinusCircle className="w-3 h-3" />
                                     </button>
                                   </div>
                                 )}
