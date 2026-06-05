@@ -31,7 +31,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
         // Fetch user profile from public.users
         const { data: profile, error: profileError } = await supabase
           .from("users")
-          .select("*, families(name, owner_id)")
+          .select("*, families!users_family_id_fkey(name, owner_id)")
           .eq("id", authUser.id)
           .single();
 
@@ -40,6 +40,11 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
         }
 
         if (profile) {
+          // Normalize the families object to match the expected interface
+          if (profile['families!users_family_id_fkey']) {
+            profile.families = profile['families!users_family_id_fkey'];
+            delete profile['families!users_family_id_fkey'];
+          }
           setUser(profile);
         } else {
           // Profile not yet synced — use auth data

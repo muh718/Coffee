@@ -44,11 +44,16 @@ export default function Header() {
       
       const { data: profile } = await supabase
         .from('users')
-        .select('*, families(name, owner_id)')
+        .select('*, families!users_family_id_fkey(name, owner_id)')
         .eq('id', authUser.id)
         .single();
         
       if (profile) {
+        // Normalize the families object
+        if (profile['families!users_family_id_fkey']) {
+          profile.families = profile['families!users_family_id_fkey'];
+          delete profile['families!users_family_id_fkey'];
+        }
         setLocalUser(profile);
         setUser(profile); // Sync global store
       }
