@@ -16,6 +16,7 @@ import {
   Clock,
   CheckCircle,
   XCircle,
+  MinusCircle,
 } from "lucide-react";
 import { toast } from "sonner";
 import Button from "@/components/ui/button";
@@ -420,7 +421,7 @@ function UserManagement() {
   };
 
   const handleRemoveMember = async (userId: string, userName: string) => {
-    if (!confirm(`هل أنت متأكد من رغبتك في طرد ${userName} من العائلة؟`)) return;
+    if (!confirm(`هل أنت متأكد من رغبتك في إزالة ${userName} من العائلة؟`)) return;
 
     try {
       const supabase = createClient();
@@ -429,10 +430,10 @@ function UserManagement() {
       if (error) throw error;
       
       if (data && data.success) {
-        toast.success(`تم طرد ${userName} بنجاح`);
+        toast.success(`تم إزالة ${userName} بنجاح`);
         setUsers((prev) => prev.filter((u) => u.id !== userId));
       } else {
-        toast.error(data?.error || "حدث خطأ أثناء طرد العضو");
+        toast.error(data?.error || "حدث خطأ أثناء إزالة العضو");
       }
     } catch (err: any) {
       toast.error(err.message || "حدث خطأ غير متوقع");
@@ -516,9 +517,11 @@ function UserManagement() {
                             <Button
                               variant="danger"
                               size="sm"
+                              className="gap-1 px-3"
                               onClick={() => handleRemoveMember(u.id, u.name)}
                             >
-                              طرد
+                              إزالة
+                              <MinusCircle className="w-4 h-4" />
                             </Button>
                           )}
                         </div>
