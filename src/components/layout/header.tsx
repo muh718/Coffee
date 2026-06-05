@@ -20,16 +20,22 @@ export default function Header() {
   const [userMenuOpen, setUserMenuOpen] = useState(false);
   const [navMenuOpen, setNavMenuOpen] = useState(false);
   const [showJoinFamily, setShowJoinFamily] = useState(false);
+  const [familyData, setFamilyData] = useState<any>(null);
+  const [familyMembers, setFamilyMembers] = useState<any[]>([]);
+  const [showMembers, setShowMembers] = useState(false);
   const userMenuRef = useRef<HTMLDivElement>(null);
   const navMenuRef = useRef<HTMLDivElement>(null);
   const router = useRouter();
   const pathname = usePathname();
   const isAdmin = user?.role === "admin";
 
+  const isFounder = familyData?.owner_id === user?.id;
+
   useEffect(() => {
     function handleClickOutside(e: MouseEvent) {
       if (userMenuRef.current && !userMenuRef.current.contains(e.target as Node)) {
         setUserMenuOpen(false);
+        setShowMembers(false);
       }
       if (navMenuRef.current && !navMenuRef.current.contains(e.target as Node)) {
         setNavMenuOpen(false);
@@ -38,6 +44,20 @@ export default function Header() {
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
+
+  useEffect(() => {
+    if (user?.family_id && userMenuOpen) {
+      const fetchFamily = async () => {
+        const supabase = createClient();
+        const { data: family } = await supabase.from('families').select('*').eq('id', user.family_id).single();
+        if (family) setFamilyData(family);
+        
+        const { data: members } = await supabase.from('users').select('id, name, avatar_url, role').eq('family_id', user.family_id).order('created_at', { ascending: true });
+        if (members) setFamilyMembers(members);
+      };
+      fetchFamily();
+    }
+  }, [user?.family_id, userMenuOpen]);
 
   const handleLogout = async () => {
     const supabase = createClient();
@@ -202,7 +222,39 @@ export default function Header() {
                       <p className="text-xs text-[var(--text-tertiary)]">
                         {user.email}
                       </p>
+                      {user.family_id && familyData && (
+                        <button
+                           onClick={() => setShowMembers(!showMembers)}
+                           className="mt-2 w-full text-start flex items-center justify-between text-xs font-medium text-[var(--brand-primary)] bg-[var(--brand-primary)]/10 px-2 py-1.5 rounded-md hover:bg-[var(--brand-primary)]/20 transition-colors"
+                        >
+                           <span>أنت عضو في {familyData.name}</span>
+                           <ChevronDown className={`w-3 h-3 transition-transform ${showMembers ? 'rotate-180' : ''}`} />
+                        </button>
+                      )}
                     </div>
+
+                    <AnimatePresence>
+                      {showMembers && familyMembers.length > 0 && (
+                        <motion.div
+                          initial={{ height: 0, opacity: 0 }}
+                          animate={{ height: "auto", opacity: 1 }}
+                          exit={{ height: 0, opacity: 0 }}
+                          className="overflow-hidden border-b border-[var(--border-primary)] bg-[var(--bg-tertiary)]"
+                        >
+                          <div className="p-2 space-y-1 max-h-32 overflow-y-auto custom-scrollbar">
+                            {familyMembers.map((m) => (
+                              <div key={m.id} className="flex items-center gap-2 px-2 py-1.5 rounded-md hover:bg-[var(--bg-card-hover)]">
+                                <Avatar name={m.name} src={m.avatar_url} size="sm" className="w-5 h-5 text-[10px]" />
+                                <span className="text-xs text-[var(--text-secondary)]">
+                                  {m.name} {m.id === familyData?.owner_id && "👑"}
+                                </span>
+                              </div>
+                            ))}
+                          </div>
+                        </motion.div>
+                      )}
+                    </AnimatePresence>
+
                     <div className="py-1">
                       {/* Family Actions */}
                       {!user.family_id ? (
@@ -229,16 +281,28 @@ export default function Header() {
                           </button>
                         </>
                       ) : (
-                        <button
-                          onClick={() => {
-                            setUserMenuOpen(false);
-                            handleLeaveFamily();
-                          }}
-                          className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-red-500 hover:bg-red-500/10 transition-colors"
-                        >
-                          <LogOut className="w-4 h-4" />
-                          الخروج من العائلة
-                        </button>
+                        <>
+                          {isFounder && (
+                            <Link
+                              href="/admin"
+                              onClick={() => setUserMenuOpen(false)}
+                              className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-tertiary)] transition-colors"
+                            >
+                              <UserPlus className="w-4 h-4" />
+                              إرسال دعوة للانضمام
+                            </Link>
+                          )}
+                          <button
+                            onClick={() => {
+                              setUserMenuOpen(false);
+                              handleLeaveFamily();
+                            }}
+                            className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-red-500 hover:bg-red-500/10 transition-colors"
+                          >
+                            <LogOut className="w-4 h-4" />
+                            الخروج من العائلة
+                          </button>
+                        </>
                       )}
 
                       <button
