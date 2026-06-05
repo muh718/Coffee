@@ -11,6 +11,7 @@ export async function compressImage(file: File): Promise<File> {
     maxWidthOrHeight: COMPRESSED_MAX_WIDTH,
     useWebWorker: true,
     fileType: "image/jpeg" as const,
+    initialQuality: 0.8,
   };
 
   try {

@@ -10,7 +10,7 @@ export const APP_DESCRIPTION = "نظام إدارة محاصيل القهوة";
 export const MAX_FILE_SIZE_MB = 10;
 export const MAX_FILE_SIZE_BYTES = MAX_FILE_SIZE_MB * 1024 * 1024;
 export const COMPRESSED_MAX_SIZE_MB = 2;
-export const COMPRESSED_MAX_WIDTH = 2048;
+export const COMPRESSED_MAX_WIDTH = 800;
 export const ALLOWED_IMAGE_TYPES = [
   "image/jpeg",
   "image/png",

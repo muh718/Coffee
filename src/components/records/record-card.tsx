@@ -46,12 +46,12 @@ export default function RecordCard({
       <Link href={`/records/${id}`} className="block group">
         <div className="card overflow-hidden">
           {/* Cover Image — full visible, no crop */}
-          <div className="relative w-full aspect-[3/4] overflow-hidden bg-[var(--bg-tertiary)] flex items-center justify-center">
+          <div className="relative w-full aspect-square overflow-hidden bg-[var(--bg-tertiary)] flex items-center justify-center">
             {coverImageUrl ? (
               <img
                 src={coverImageUrl}
                 alt={name}
-                className="max-w-full max-h-full object-contain transition-transform duration-500 group-hover:scale-105"
+                className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
                 loading="lazy"
               />
             ) : (

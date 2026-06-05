@@ -125,7 +125,7 @@ export default function DashboardPage() {
 
       {/* Records Grid */}
       {isLoading && records.length === 0 ? (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5">
+        <div className="grid grid-cols-4 gap-2">
           {Array.from({ length: 8 }).map((_, i) => (
             <RecordCardSkeleton key={i} />
           ))}
@@ -163,7 +163,7 @@ export default function DashboardPage() {
         </motion.div>
       ) : (
         <>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5">
+          <div className="grid grid-cols-4 gap-2">
             {records.map((record, i) => (
               <RecordCard
                 key={record.id || record.record_id}
