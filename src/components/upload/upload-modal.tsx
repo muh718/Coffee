@@ -334,6 +334,7 @@ export default function UploadModal({
                 ref={fileInputRef}
                 type="file"
                 accept={ALLOWED_IMAGE_TYPES.join(",")}
+                capture="environment"
                 onChange={(e) => {
                   const f = e.target.files?.[0];
                   if (f) handleFileSelect(f);
