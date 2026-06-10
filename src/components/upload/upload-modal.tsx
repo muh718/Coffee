@@ -3,7 +3,7 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
 
 import { useState, useCallback, useRef } from "react";
-import { Upload, Camera, Image as ImageIcon, X, FileUp } from "lucide-react";
+import { Upload, Camera, Image as ImageIcon, X, FileUp, ImagePlus } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { toast } from "sonner";
 import Modal from "@/components/ui/modal";
@@ -68,9 +68,13 @@ export default function UploadModal({
   const [isDragging, setIsDragging] = useState(false);
   const [similarRecords, setSimilarRecords] = useState<any[]>([]);
   const [showDuplicateDialog, setShowDuplicateDialog] = useState(false);
+  const [showSourcePicker, setShowSourcePicker] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const cameraInputRef = useRef<HTMLInputElement>(null);
 
   const isFirstImage = !recordId;
+
+  const isMobile = typeof navigator !== "undefined" && /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
 
   const resetState = () => {
     setStep("upload");
@@ -85,6 +89,7 @@ export default function UploadModal({
     setIsProcessing(false);
     setSimilarRecords([]);
     setShowDuplicateDialog(false);
+    setShowSourcePicker(false);
   };
 
   const handleClose = () => {
@@ -312,7 +317,13 @@ export default function UploadModal({
                 onDragLeave={handleDragOut}
                 onDragOver={handleDrag}
                 onDrop={handleDrop}
-                onClick={() => fileInputRef.current?.click()}
+                onClick={() => {
+                  if (isMobile) {
+                    setShowSourcePicker(true);
+                  } else {
+                    fileInputRef.current?.click();
+                  }
+                }}
                 className={cn(
                   "border-2 border-dashed rounded-2xl p-12 text-center cursor-pointer transition-all duration-300",
                   isDragging
@@ -324,12 +335,14 @@ export default function UploadModal({
                   <FileUp className="w-8 h-8 text-white" />
                 </div>
                 <p className="text-base font-semibold text-[var(--text-primary)] mb-1">
-                  اسحب الصورة هنا أو انقر للرفع
+                  {isMobile ? "انقر لاختيار مصدر الصورة" : "اسحب الصورة هنا أو انقر للرفع"}
                 </p>
                 <p className="text-sm text-[var(--text-tertiary)]">
                   JPEG, PNG, WebP — حتى 10 ميجابايت
                 </p>
               </div>
+
+              {/* Hidden file input for gallery (no capture) */}
               <input
                 ref={fileInputRef}
                 type="file"
@@ -337,9 +350,108 @@ export default function UploadModal({
                 onChange={(e) => {
                   const f = e.target.files?.[0];
                   if (f) handleFileSelect(f);
+                  e.target.value = "";
                 }}
                 className="hidden"
               />
+
+              {/* Hidden file input for camera (with capture) */}
+              <input
+                ref={cameraInputRef}
+                type="file"
+                accept="image/*"
+                capture="environment"
+                onChange={(e) => {
+                  const f = e.target.files?.[0];
+                  if (f) handleFileSelect(f);
+                  e.target.value = "";
+                }}
+                className="hidden"
+              />
+
+              {/* Mobile Source Picker Action Sheet */}
+              <AnimatePresence>
+                {showSourcePicker && (
+                  <motion.div
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    exit={{ opacity: 0 }}
+                    className="fixed inset-0 z-[100] flex items-end justify-center bg-black/50 backdrop-blur-sm"
+                    onClick={(e) => {
+                      if (e.target === e.currentTarget) setShowSourcePicker(false);
+                    }}
+                  >
+                    <motion.div
+                      initial={{ y: "100%" }}
+                      animate={{ y: 0 }}
+                      exit={{ y: "100%" }}
+                      transition={{ type: "spring", damping: 28, stiffness: 350 }}
+                      className="w-full max-w-lg mx-4 mb-6 space-y-2"
+                    >
+                      {/* Action buttons group */}
+                      <div className="rounded-2xl overflow-hidden bg-[var(--bg-secondary)] border border-[var(--border-primary)] shadow-2xl">
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setShowSourcePicker(false);
+                            cameraInputRef.current?.click();
+                          }}
+                          className="w-full flex items-center gap-4 px-6 py-4 text-right hover:bg-[var(--bg-tertiary)] active:bg-[var(--bg-tertiary)] transition-colors"
+                        >
+                          <div className="w-11 h-11 rounded-xl gradient-brand flex items-center justify-center flex-shrink-0">
+                            <Camera className="w-5 h-5 text-white" />
+                          </div>
+                          <div className="flex-1">
+                            <p className="text-base font-semibold text-[var(--text-primary)]">
+                              التقاط صورة عبر الكاميرا
+                            </p>
+                            <p className="text-xs text-[var(--text-tertiary)] mt-0.5">
+                              فتح الكاميرا لالتقاط صورة جديدة
+                            </p>
+                          </div>
+                        </button>
+
+                        <div className="h-px bg-[var(--border-primary)]" />
+
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setShowSourcePicker(false);
+                            fileInputRef.current?.click();
+                          }}
+                          className="w-full flex items-center gap-4 px-6 py-4 text-right hover:bg-[var(--bg-tertiary)] active:bg-[var(--bg-tertiary)] transition-colors"
+                        >
+                          <div className="w-11 h-11 rounded-xl bg-accent-500/10 flex items-center justify-center flex-shrink-0">
+                            <ImagePlus className="w-5 h-5 text-accent-500" />
+                          </div>
+                          <div className="flex-1">
+                            <p className="text-base font-semibold text-[var(--text-primary)]">
+                              اختيار من الاستوديو
+                            </p>
+                            <p className="text-xs text-[var(--text-tertiary)] mt-0.5">
+                              اختيار صورة موجودة من المعرض
+                            </p>
+                          </div>
+                        </button>
+                      </div>
+
+                      {/* Cancel button */}
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setShowSourcePicker(false);
+                        }}
+                        className="w-full rounded-2xl bg-[var(--bg-secondary)] border border-[var(--border-primary)] px-6 py-3.5 text-center font-semibold text-[var(--text-secondary)] hover:bg-[var(--bg-tertiary)] active:bg-[var(--bg-tertiary)] transition-colors shadow-2xl"
+                      >
+                        إلغاء
+                      </button>
+                    </motion.div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
             </motion.div>
           )}
 
