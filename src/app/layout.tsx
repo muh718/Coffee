@@ -8,6 +8,10 @@ export const metadata: Metadata = {
   description:
     "نظام إدارة محاصيل القهوة والصور",
   keywords: ["محاصيل", "قهوة", "إدارة", "أرشيف"],
+  icons: {
+    icon: "/icon.png",
+    apple: "/icon.png",
+  },
 };
 
 export default function RootLayout({
