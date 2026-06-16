@@ -40,8 +40,9 @@ export async function GET(request: NextRequest) {
           .order("roastery_name", { ascending: true, nullsFirst: false })
           .order("name", { ascending: true });
       } else if (sort === "country") {
-        // Fetch without server sort — we'll sort client-side to strip "ال"
-        queryBuilder = queryBuilder;
+        queryBuilder = queryBuilder
+          .order("country_of_origin", { ascending: true, nullsFirst: false })
+          .order("name", { ascending: true });
       } else {
         // Default: "latest" — newest first
         queryBuilder = queryBuilder.order("created_at", { ascending: false });

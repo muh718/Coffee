@@ -60,7 +60,7 @@ export default function DashboardPage() {
         setIsLoading(false);
       }
     },
-    [searchQuery, page]
+    [searchQuery, page, sortBy]
   );
 
   // Initial fetch
