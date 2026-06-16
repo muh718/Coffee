@@ -44,7 +44,7 @@ export default function UploadModal({
   const [rawText, setRawText] = useState("");
   const [country, setCountry] = useState<string>("");
   const [brewType, setBrewType] = useState<string>("");
-  const [roasteryName, setRoasteryName] = useState<string>("اخرى");
+  const [roasteryName, setRoasteryName] = useState<string>("");
   const [uploadedUrl, setUploadedUrl] = useState<string>("");
 
   const COUNTRIES = [
@@ -86,7 +86,7 @@ export default function UploadModal({
     setRawText("");
     setCountry("");
     setBrewType("");
-    setRoasteryName("اخرى");
+    setRoasteryName("");
     setUploadedUrl("");
     setIsProcessing(false);
     setSimilarRecords([]);
@@ -523,7 +523,7 @@ export default function UploadModal({
                     label="اسم المحمصة"
                     value={roasteryName}
                     onChange={(e) => setRoasteryName(e.target.value)}
-                    placeholder="أدخل اسم المحمصة"
+                    placeholder="اخرى"
                   />
                   <div className="grid grid-cols-2 gap-4">
                     <div className="space-y-1.5">
