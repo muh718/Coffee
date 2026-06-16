@@ -21,6 +21,7 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import Button from "@/components/ui/button";
+import Input from "@/components/ui/input";
 import Avatar from "@/components/ui/avatar";
 import Badge from "@/components/ui/badge";
 import { DetailSkeleton } from "@/components/ui/skeleton";
@@ -43,6 +44,24 @@ const COUNTRY_FLAGS: Record<string, string> = {
   "اليمن": "🇾🇪",
 };
 
+const COUNTRIES = [
+  { value: "البرازيل", label: "البرازيل", flag: "🇧🇷" },
+  { value: "إثيوبيا", label: "إثيوبيا", flag: "🇪🇹" },
+  { value: "سلفادور", label: "سلفادور", flag: "🇸🇻" },
+  { value: "أوغندا", label: "أوغندا", flag: "🇺🇬" },
+  { value: "كوستاريكا", label: "كوستاريكا", flag: "🇨🇷" },
+  { value: "إندونيسيا", label: "إندونيسيا", flag: "🇮🇩" },
+  { value: "كولمبيا", label: "كولمبيا", flag: "🇨🇴" },
+  { value: "بيرو", label: "بيرو", flag: "🇵🇪" },
+  { value: "اليمن", label: "اليمن", flag: "🇾🇪" },
+];
+
+const BREW_TYPES = [
+  { value: "فلتر", label: "فلتر" },
+  { value: "اسبريسو", label: "اسبريسو" },
+  { value: "فلتر & اسبريسو", label: "فلتر & اسبريسو" },
+];
+
 export default function RecordDetailPage() {
   const params = useParams();
   const router = useRouter();
@@ -56,8 +75,11 @@ export default function RecordDetailPage() {
   const [showUpload, setShowUpload] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [deleteImageId, setDeleteImageId] = useState<string | null>(null);
-  const [isEditing, setIsEditing] = useState(false);
+  const [showEditModal, setShowEditModal] = useState(false);
   const [editName, setEditName] = useState("");
+  const [editRoastery, setEditRoastery] = useState("");
+  const [editCountry, setEditCountry] = useState("");
+  const [editBrewType, setEditBrewType] = useState("");
   const [lightboxIndex, setLightboxIndex] = useState(-1);
   const [slideIndex, setSlideIndex] = useState(0);
 
@@ -99,17 +121,30 @@ export default function RecordDetailPage() {
   }, [recordId]);
 
   /* ── Actions ── */
-  const handleRename = async () => {
+  const openEditModal = () => {
+    setEditName(record.name);
+    setEditRoastery(record.roastery_name || "");
+    setEditCountry(record.country_of_origin || "");
+    setEditBrewType(record.brew_type || "");
+    setShowEditModal(true);
+  };
+
+  const handleUpdateRecord = async () => {
     if (!editName.trim()) return;
     const supabase = createClient();
 
     const { error } = await supabase
       .from("records")
-      .update({ name: editName.trim() })
+      .update({ 
+        name: editName.trim(),
+        roastery_name: editRoastery.trim() || "اخرى",
+        country_of_origin: editCountry || null,
+        brew_type: editBrewType || null,
+      })
       .eq("id", recordId);
 
     if (error) {
-      toast.error("فشل تحديث الاسم");
+      toast.error("فشل تحديث المحصول");
       return;
     }
 
@@ -120,9 +155,16 @@ export default function RecordDetailPage() {
       details: { old_name: record.name, new_name: editName.trim() },
     });
 
-    setRecord({ ...record, name: editName.trim() });
-    setIsEditing(false);
-    toast.success("تم تحديث اسم المحصول");
+    setRecord({ 
+      ...record, 
+      name: editName.trim(),
+      roastery_name: editRoastery.trim() || "اخرى",
+      country_of_origin: editCountry || null,
+      brew_type: editBrewType || null,
+    });
+    setShowEditModal(false);
+    toast.success("تم تحديث المحصول بنجاح");
+    router.refresh();
   };
 
   const handleDeleteRecord = async () => {
@@ -209,41 +251,14 @@ export default function RecordDetailPage() {
         {/* ── 1. Crop Name ── */}
         <div className="p-4 sm:p-6 pb-0">
           <div className="flex items-start gap-3">
-            {isEditing ? (
-              <div className="flex-1 flex items-center gap-2">
-                <input
-                  type="text"
-                  value={editName}
-                  onChange={(e) => setEditName(e.target.value)}
-                  className="flex-1 text-lg sm:text-xl font-bold bg-transparent border-b-2 border-brand-500 outline-none text-[var(--text-primary)] pb-1"
-                  autoFocus
-                />
-                <button
-                  onClick={handleRename}
-                  className="p-1.5 rounded-lg text-emerald-500 hover:bg-emerald-500/10 transition-colors"
-                >
-                  <Check className="w-5 h-5" />
-                </button>
-                <button
-                  onClick={() => {
-                    setIsEditing(false);
-                    setEditName(record.name);
-                  }}
-                  className="p-1.5 rounded-lg text-[var(--text-tertiary)] hover:bg-[var(--bg-tertiary)] transition-colors"
-                >
-                  <X className="w-5 h-5" />
-                </button>
-              </div>
-            ) : (
-              <h1 className="flex-1 text-lg sm:text-xl font-bold text-[var(--text-primary)] leading-relaxed">
-                {record.name}
-              </h1>
-            )}
-            {isAdmin && !isEditing && (
+            <h1 className="flex-1 text-lg sm:text-xl font-bold text-[var(--text-primary)] leading-relaxed">
+              {record.name}
+            </h1>
+            {isAdmin && (
               <button
-                onClick={() => setIsEditing(true)}
+                onClick={openEditModal}
                 className="p-2 rounded-lg text-[var(--text-tertiary)] hover:text-brand-500 hover:bg-brand-500/10 transition-colors flex-shrink-0"
-                title="تعديل الاسم"
+                title="تعديل المحصول"
               >
                 <Pencil className="w-4 h-4" />
               </button>
@@ -466,6 +481,78 @@ export default function RecordDetailPage() {
               onClick={() => deleteImageId && handleDeleteImage(deleteImageId)}
             >
               حذف الصورة
+            </Button>
+          </div>
+        </div>
+      </Modal>
+
+      {/* Edit Record Modal */}
+      <Modal
+        isOpen={showEditModal}
+        onClose={() => setShowEditModal(false)}
+        title="تعديل المحصول"
+        size="md"
+      >
+        <div className="space-y-4">
+          <Input
+            label="اسم المحصول"
+            value={editName}
+            onChange={(e) => setEditName(e.target.value)}
+            placeholder="أدخل اسم المحصول"
+            hint="هذا الحقل إلزامي"
+          />
+          <Input
+            label="اسم المحمصة"
+            value={editRoastery}
+            onChange={(e) => setEditRoastery(e.target.value)}
+            placeholder="اخرى"
+          />
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-1.5">
+              <label className="block text-sm font-medium text-[var(--text-primary)]">
+                بلد المنشأ
+              </label>
+              <select
+                value={editCountry}
+                onChange={(e) => setEditCountry(e.target.value)}
+                className="w-full bg-white/5 border border-[var(--border-primary)] rounded-xl px-4 py-3 text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-brand-500/50 appearance-none transition-all"
+              >
+                <option value="" disabled className="text-gray-500">اختر بلد المنشأ</option>
+                {COUNTRIES.map(c => (
+                  <option key={c.value} value={c.value} className="text-black dark:text-white bg-white dark:bg-gray-800">
+                    {c.flag} {c.label}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div className="space-y-1.5">
+              <label className="block text-sm font-medium text-[var(--text-primary)]">
+                نوع التحضير
+              </label>
+              <select
+                value={editBrewType}
+                onChange={(e) => setEditBrewType(e.target.value)}
+                className="w-full bg-white/5 border border-[var(--border-primary)] rounded-xl px-4 py-3 text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-brand-500/50 appearance-none transition-all"
+              >
+                <option value="" disabled className="text-gray-500">اختر نوع التحضير</option>
+                {BREW_TYPES.map(t => (
+                  <option key={t.value} value={t.value} className="text-black dark:text-white bg-white dark:bg-gray-800">
+                    {t.label}
+                  </option>
+                ))}
+              </select>
+            </div>
+          </div>
+          <div className="flex gap-3 justify-end pt-4">
+            <Button variant="ghost" onClick={() => setShowEditModal(false)}>
+              إلغاء
+            </Button>
+            <Button
+              variant="primary"
+              onClick={handleUpdateRecord}
+              disabled={!editName.trim()}
+            >
+              حفظ التعديلات
             </Button>
           </div>
         </div>

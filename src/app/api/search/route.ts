@@ -23,63 +23,55 @@ export async function GET(request: NextRequest) {
     // Helper: strip leading Arabic definite article "ال" for locale-aware comparison
     const stripAl = (s: string) => s.replace(/^ال/, "");
 
-    if (!query.trim()) {
-      // No search query — apply sorting
-      let queryBuilder = supabase
-        .from("records")
-        .select(`
-          *,
-          creator:users!created_by(id, name, avatar_url),
-          images(count)
-        `);
+    let queryBuilder = supabase
+      .from("records")
+      .select(`
+        *,
+        creator:users!created_by(id, name, avatar_url),
+        images(count)
+      `);
 
-      if (sort === "crop") {
-        queryBuilder = queryBuilder.order("name", { ascending: true });
-      } else if (sort === "roastery") {
-        queryBuilder = queryBuilder
-          .order("roastery_name", { ascending: true, nullsFirst: false })
-          .order("name", { ascending: true });
-      } else if (sort === "country") {
-        queryBuilder = queryBuilder
-          .order("country_of_origin", { ascending: true, nullsFirst: false })
-          .order("name", { ascending: true });
-      } else {
-        // Default: "latest" — newest first
-        queryBuilder = queryBuilder.order("created_at", { ascending: false });
-      }
-
-      const { data, error } = await queryBuilder.range(offset, offset + limit - 1);
-
-      if (error) throw error;
-
-      let records = (data || []).map((r: any) => ({
-        ...r,
-        image_count: r.images?.[0]?.count || 0,
-        creator_name: r.creator?.name || "غير معروف",
-      }));
-
-      // Client-side Arabic-aware sort for country
-      if (sort === "country") {
-        records.sort((a: any, b: any) => {
-          const aCountry = stripAl(a.country_of_origin || "ﻻ");
-          const bCountry = stripAl(b.country_of_origin || "ﻻ");
-          return aCountry.localeCompare(bCountry, "ar");
-        });
-      }
-
-      return NextResponse.json({ records, total: records.length });
+    // Apply reactive substring search if length >= 2
+    if (query.trim().length >= 2) {
+      const searchTerm = `%${query.trim()}%`;
+      queryBuilder = queryBuilder.or(`name.ilike.${searchTerm},roastery_name.ilike.${searchTerm},country_of_origin.ilike.${searchTerm}`);
     }
 
-    // Use the deep_search function
-    const { data, error } = await supabase.rpc("deep_search", {
-      search_query: query,
-      result_limit: limit,
-      result_offset: offset,
-    });
+    if (sort === "crop") {
+      queryBuilder = queryBuilder.order("name", { ascending: true });
+    } else if (sort === "roastery") {
+      queryBuilder = queryBuilder
+        .order("roastery_name", { ascending: true, nullsFirst: false })
+        .order("name", { ascending: true });
+    } else if (sort === "country") {
+      queryBuilder = queryBuilder
+        .order("country_of_origin", { ascending: true, nullsFirst: false })
+        .order("name", { ascending: true });
+    } else {
+      // Default: "latest" — newest first
+      queryBuilder = queryBuilder.order("created_at", { ascending: false });
+    }
+
+    const { data, error } = await queryBuilder.range(offset, offset + limit - 1);
 
     if (error) throw error;
 
-    return NextResponse.json({ records: data || [], total: (data || []).length });
+    let records = (data || []).map((r: any) => ({
+      ...r,
+      image_count: r.images?.[0]?.count || 0,
+      creator_name: r.creator?.name || "غير معروف",
+    }));
+
+    // Client-side Arabic-aware sort for country
+    if (sort === "country") {
+      records.sort((a: any, b: any) => {
+        const aCountry = stripAl(a.country_of_origin || "ﻻ");
+        const bCountry = stripAl(b.country_of_origin || "ﻻ");
+        return aCountry.localeCompare(bCountry, "ar");
+      });
+    }
+
+    return NextResponse.json({ records, total: records.length });
   } catch (error) {
     console.error("Search API error:", error);
     return NextResponse.json(

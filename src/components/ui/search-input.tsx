@@ -28,7 +28,10 @@ export default function SearchInput({
       setQuery(value);
       if (debounceRef.current) clearTimeout(debounceRef.current);
       debounceRef.current = setTimeout(() => {
-        onSearch(value.trim());
+        const trimmed = value.trim();
+        if (trimmed.length !== 1) {
+          onSearch(trimmed);
+        }
       }, SEARCH_DEBOUNCE_MS);
     },
     [onSearch]
