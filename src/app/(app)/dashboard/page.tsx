@@ -27,7 +27,7 @@ export default function DashboardPage() {
   const [records, setRecords] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
-  const [sortBy, setSortBy] = useState("name");
+  const [sortBy, setSortBy] = useState("latest");
   const [showUpload, setShowUpload] = useState(false);
   const [hasMore, setHasMore] = useState(true);
   const [page, setPage] = useState(0);
@@ -110,9 +110,10 @@ export default function DashboardPage() {
           onChange={(e) => setSortBy(e.target.value)}
           className="bg-white/5 border border-[var(--border-primary)] rounded-xl px-4 py-2 text-sm text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-brand-500/50 appearance-none"
         >
-          <option value="name">الاسم</option>
-          <option value="country">البلد ثم الاسم</option>
-          <option value="type">النوع</option>
+          <option value="latest">أحدث الإضافات</option>
+          <option value="crop">المحصول</option>
+          <option value="roastery">المحمصة</option>
+          <option value="country">بلد المنشأ</option>
         </select>
         <Button
           variant="primary"
