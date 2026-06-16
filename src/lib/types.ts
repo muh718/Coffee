@@ -46,6 +46,7 @@ export interface DocRecord {
   updated_at: string;
   country_of_origin: string | null;
   brew_type: string | null;
+  roastery_name: string | null;
   // Joined fields
   creator?: User;
   image_count?: number;

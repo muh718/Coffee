@@ -337,7 +337,7 @@ export default function RecordDetailPage() {
         {/* ── 3. Details below image ── */}
         <div className="p-4 sm:p-6 space-y-4">
           {/* Country + Brew type */}
-          {(record.country_of_origin || record.brew_type) && (
+          {(record.country_of_origin || record.brew_type || record.roastery_name) && (
             <div className="flex items-center flex-wrap gap-2">
               {record.country_of_origin && (
                 <div className="flex items-center gap-1.5 text-sm text-[var(--text-secondary)] bg-[var(--bg-tertiary)] px-3 py-1.5 rounded-lg">
@@ -348,6 +348,11 @@ export default function RecordDetailPage() {
               {record.brew_type && (
                 <div className="text-sm text-[var(--text-secondary)] bg-[var(--bg-tertiary)] px-3 py-1.5 rounded-lg">
                   {record.brew_type}
+                </div>
+              )}
+              {record.roastery_name && (
+                <div className="text-sm text-[var(--text-secondary)] bg-[var(--bg-tertiary)] px-3 py-1.5 rounded-lg">
+                  🏭 {record.roastery_name}
                 </div>
               )}
             </div>

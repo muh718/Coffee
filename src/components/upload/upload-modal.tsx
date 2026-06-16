@@ -44,6 +44,7 @@ export default function UploadModal({
   const [rawText, setRawText] = useState("");
   const [country, setCountry] = useState<string>("");
   const [brewType, setBrewType] = useState<string>("");
+  const [roasteryName, setRoasteryName] = useState<string>("اخرى");
   const [uploadedUrl, setUploadedUrl] = useState<string>("");
 
   const COUNTRIES = [
@@ -85,6 +86,7 @@ export default function UploadModal({
     setRawText("");
     setCountry("");
     setBrewType("");
+    setRoasteryName("اخرى");
     setUploadedUrl("");
     setIsProcessing(false);
     setSimilarRecords([]);
@@ -195,6 +197,7 @@ export default function UploadModal({
           created_by: user!.id,
           country_of_origin: country || null,
           brew_type: brewType || null,
+          roastery_name: roasteryName.trim() || "اخرى",
         })
         .select()
         .single();
@@ -515,6 +518,12 @@ export default function UploadModal({
                     onChange={(e) => setEditedTitle(e.target.value)}
                     placeholder="أدخل اسم المحصول"
                     hint="هذا الحقل إلزامي"
+                  />
+                  <Input
+                    label="اسم المحمصة"
+                    value={roasteryName}
+                    onChange={(e) => setRoasteryName(e.target.value)}
+                    placeholder="أدخل اسم المحمصة"
                   />
                   <div className="grid grid-cols-2 gap-4">
                     <div className="space-y-1.5">
