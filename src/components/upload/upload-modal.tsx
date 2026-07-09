@@ -52,6 +52,7 @@ export default function UploadModal({
     { value: "إثيوبيا", label: "إثيوبيا", flag: "🇪🇹" },
     { value: "سلفادور", label: "سلفادور", flag: "🇸🇻" },
     { value: "أوغندا", label: "أوغندا", flag: "🇺🇬" },
+    { value: "غواتيمالا", label: "غواتيمالا", flag: "🇬🇹" },
     { value: "كوستاريكا", label: "كوستاريكا", flag: "🇨🇷" },
     { value: "إندونيسيا", label: "إندونيسيا", flag: "🇮🇩" },
     { value: "كولمبيا", label: "كولمبيا", flag: "🇨🇴" },

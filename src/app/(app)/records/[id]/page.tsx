@@ -42,6 +42,7 @@ const COUNTRY_FLAGS: Record<string, string> = {
   "كولمبيا": "🇨🇴",
   "بيرو": "🇵🇪",
   "اليمن": "🇾🇪",
+  "غواتيمالا": "🇬🇹",
 };
 
 const COUNTRIES = [
@@ -49,6 +50,7 @@ const COUNTRIES = [
   { value: "إثيوبيا", label: "إثيوبيا", flag: "🇪🇹" },
   { value: "سلفادور", label: "سلفادور", flag: "🇸🇻" },
   { value: "أوغندا", label: "أوغندا", flag: "🇺🇬" },
+  { value: "غواتيمالا", label: "غواتيمالا", flag: "🇬🇹" },
   { value: "كوستاريكا", label: "كوستاريكا", flag: "🇨🇷" },
   { value: "إندونيسيا", label: "إندونيسيا", flag: "🇮🇩" },
   { value: "كولمبيا", label: "كولمبيا", flag: "🇨🇴" },
